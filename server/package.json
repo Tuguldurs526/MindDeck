@@ -1,0 +1,11 @@
+{ "type": "module",
+  "scripts" :{
+    "dev": " npx ts-node index.ts"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.3",
+    "express": "^5.1.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
