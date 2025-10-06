@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Minddeck",
+    "slug": "minddeck",
+    "scheme": "minddeck",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "splash": { "image": "./assets/icon.png", "resizeMode": "contain", "backgroundColor": "#ffffff" },
+    "updates": { "fallbackToCacheTimeout": 0 },
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "foregroundImage": "./assets/icon.png", "backgroundColor": "#ffffff" } },
+    "web": { "bundler": "metro", "output": "static" },
+    "extra": {
+      "API_URL": "http://localhost:5000"
+    }
+  }
+}

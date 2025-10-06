@@ -1,0 +1,17 @@
+{
+  "name": "minddeck",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -n SERVER,WEB,MOBILE -c green,cyan,magenta \"npm:dev -w apps/server\" \"npm:dev -w apps/web\" \"npm:start -w apps/mobile\"",
+    "dev:server": "npm run dev -w apps/server",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:mobile": "npm start -w apps/mobile",
+    "lint": "echo 'add linters per app'",
+    "typecheck": "echo 'add TS build per app'"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "typescript": "^5.6.2"
+  }
+}

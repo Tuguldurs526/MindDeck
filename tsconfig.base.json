@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "shared-types/*": ["packages/shared-types/src/*"],
+      "shared-api/*": ["packages/shared-api/src/*"]
+    }
+  }
+}
