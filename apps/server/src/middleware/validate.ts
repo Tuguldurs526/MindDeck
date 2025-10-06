@@ -1,3 +1,4 @@
+// apps/server/src/middleware/validate.ts
 import type { AnyZodObject } from "zod";
 import { ZodError } from "zod";
 
@@ -10,6 +11,6 @@ export const validate =
       if (e instanceof ZodError) {
         return res.status(400).json({ error: e.flatten() });
       }
-      return res.status(400).json({ error: "Invalid request" });
+      return res.status(500).json({ error: "Validation failed" });
     }
   };

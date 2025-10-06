@@ -1,1 +1,38 @@
-node_modules
+# universal junk
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+dist/
+build/
+coverage/
+.tmp/
+.cache/
+
+# env files (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+
+# server (express/mongoose)
+apps/server/dist/
+apps/server/coverage/
+
+# web (Next.js)
+apps/web/.next/
+apps/web/out/
+
+# mobile (Expo / React Native)
+apps/mobile/.expo/
+apps/mobile/.expo-shared/
+apps/mobile/.cache/
+# if you ever eject
+apps/mobile/android/
+apps/mobile/ios/
+
+# vercel / misc deploy outputs
+.vercel/
