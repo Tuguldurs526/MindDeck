@@ -9,13 +9,15 @@ import deckRoutes from "./routes/deckRoutes.js";
 
 const app = express();
 
+app.disable("x-powered-by"); // tiny hardening
+
 // CORS + parsing + logging
 const origins = (process.env.CORS_ORIGINS ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 app.use(cors({ origin: origins.length ? origins : "*", credentials: false }));
-app.use(express.json());
+app.use(express.json({ limit: "1mb" })); // sane body limit
 app.use(morgan("dev"));
 
 // Health and root
@@ -29,10 +31,10 @@ app.use("/auth", authRoutes);
 app.use("/cards", cardRoutes);
 app.use("/decks", deckRoutes);
 
-// 404 catch-all (must be LAST)
+// 404 catch-all (must be LAST normal middleware)
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 
-// Optional centralized error handler (good hygiene)
+// Error handler (must be last)
 app.use(
   (
     err: any,
@@ -58,3 +60,6 @@ connectDB()
     console.error("Failed to connect DB:", err);
     process.exit(1);
   });
+
+// Optional export if you ever add tests later
+export { app };

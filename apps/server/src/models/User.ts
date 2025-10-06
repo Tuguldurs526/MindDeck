@@ -6,7 +6,8 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
+      unique: true, // keep this
+      index: true, // this is fine together with unique
       lowercase: true,
       trim: true,
     },
@@ -15,5 +16,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.index({ email: 1 }, { unique: true });
+// REMOVE this if you have it, it's the duplicate:
+// userSchema.index({ email: 1 }, { unique: true });
+
 export default mongoose.model("User", userSchema);

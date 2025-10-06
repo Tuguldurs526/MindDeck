@@ -6,15 +6,17 @@ import Deck from "../models/Deck.js";
 const { isValidObjectId } = mongoose;
 const getUserId = (req: Request) => (req as any).user?.sub as string;
 
-export async function createDeck(req: Request, res: Response) {
+export async function createDeck(req, res) {
   try {
     let { title } = req.body as { title?: string };
     title = title?.trim();
     if (!title) return res.status(400).json({ error: "Missing title" });
 
-    const deck = await Deck.create({ title, user: getUserId(req) });
+    const deck = await Deck.create({ title, user: (req as any).user?.sub });
     return res.status(201).json(deck);
   } catch (e: any) {
+    if (e?.code === 11000)
+      return res.status(409).json({ error: "Deck title already exists" });
     return res.status(500).json({ error: e.message });
   }
 }

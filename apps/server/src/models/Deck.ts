@@ -8,5 +8,7 @@ const deckSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-deckSchema.index({ user: 1, title: 1 }, { unique: true });
+// add near the bottom, before export
+deckSchema.index({ user: 1 });
+deckSchema.index({ user: 1, title: 1 }, { unique: true }); // prevent duplicate titles per user
 export default mongoose.model("Deck", deckSchema);
