@@ -1,0 +1,36 @@
+name: server-ci
+
+on:
+  push:
+    paths:
+      - "apps/server/**"
+      - ".github/workflows/server-ci.yml"
+  pull_request:
+    paths:
+      - "apps/server/**"
+      - ".github/workflows/server-ci.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            apps/server/package-lock.json
+
+      - run: npm ci
+
+      # E2E uses mongodb-memory-server by default. No secrets needed.
+      - run: npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: testsecret
