@@ -2,6 +2,8 @@
 
 Monorepo for Minddeck: spaced-repetition flashcards for web and mobile.
 
+👉 Looking for the product overview? Check the [MindDeck MVP one-pager](docs/mvp-one-pager.md).
+
 Apps:
 
 - **Server** — Express + TypeScript + Mongoose + JWT (`apps/server`)
