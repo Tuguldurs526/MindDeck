@@ -1,25 +1,26 @@
 // apps/server/src/services/aiService.ts
 import OpenAI from "openai";
 
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  console.warn(
-    "[aiService] OPENAI_API_KEY not set. /ai endpoints will fail if called."
-  );
-}
-
-const client = new OpenAI({ apiKey });
 const MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-/**
- * Extract a plain string from OpenAI Responses API result, with fallbacks.
- */
-function extractText(res: any): string {
-  // New SDK convenience
-  if (res && typeof res.output_text === "string" && res.output_text.trim()) {
-    return res.output_text.trim();
+let _client: OpenAI | null = null;
+function getClient(): OpenAI {
+  if (_client) return _client;
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    // If tests stub callLLM, they won't hit here. If they don't, fail clearly.
+    throw new Error("[aiService] OPENAI_API_KEY is not set");
   }
-  // Structured fallback: responses output[]
+  _client = new OpenAI({ apiKey });
+  return _client;
+}
+
+/** Extract plain text from Responses API result */
+function extractText(res: any): string {
+  if (res?.output_text && typeof res.output_text === "string") {
+    const s = res.output_text.trim();
+    if (s) return s;
+  }
   try {
     const pieces = (res?.output ?? [])
       .flatMap((o: any) => o?.content ?? [])
@@ -27,37 +28,27 @@ function extractText(res: any): string {
       .filter(Boolean);
     const txt = pieces.join("\n").trim();
     if (txt) return txt;
-  } catch (_) {}
-  // Last resort: stringify
+  } catch {}
   return JSON.stringify(res);
 }
 
-/**
- * Core seam used by tests to verify caching/limits without real network.
- * Use this everywhere instead of hitting the client directly.
- */
+/** Single seam; tests spy on this to avoid network */
 export async function callLLM(
   systemPrompt: string,
   userPrompt: string,
-  opts?: {
-    maxOutputTokens?: number;
-    temperature?: number;
-    timeoutMs?: number;
-  }
+  opts?: { maxOutputTokens?: number; temperature?: number; timeoutMs?: number }
 ): Promise<string> {
   const maxOutputTokens = opts?.maxOutputTokens ?? 250;
   const temperature = opts?.temperature ?? 0.2;
   const timeoutMs = opts?.timeoutMs ?? 15000;
 
   const ac = new AbortController();
-  const t = setTimeout(() => ac.abort(), timeoutMs);
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
 
-  // Tiny backoff for 429/5xx
   let attempt = 0;
-  // at most 2 retries (3 total tries)
   while (true) {
     try {
-      const res = await client.responses.create({
+      const res = await getClient().responses.create({
         model: MODEL,
         input: [
           { role: "system", content: systemPrompt },
@@ -65,11 +56,10 @@ export async function callLLM(
         ],
         max_output_tokens: maxOutputTokens,
         temperature,
-        // @ts-ignore — SDK supports signal passthrough
+        // @ts-ignore
         signal: ac.signal,
       });
-
-      clearTimeout(t);
+      clearTimeout(timer);
       return extractText(res);
     } catch (err: any) {
       attempt++;
@@ -82,7 +72,7 @@ export async function callLLM(
         await new Promise((r) => setTimeout(r, 400 * attempt));
         continue;
       }
-      clearTimeout(t);
+      clearTimeout(timer);
       throw err;
     }
   }
