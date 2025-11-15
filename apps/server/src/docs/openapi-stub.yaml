@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: Minddeck API (MVP)
+  version: 0.1.0
+servers:
+  - url: http://localhost:5000
+paths:
+  /reviews/next:
+    get:
+      summary: Get due cards
+      parameters:
+        - in: query
+          name: deckId
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: OK
+  /reviews/answer:
+    post:
+      summary: Answer a review
+      requestBody:
+        required: true
+      responses:
+        "200": { description: OK }
+  /ai/hint:
+    post:
+      summary: Short hint for a card
+      responses:
+        "200": { description: OK }
+  /ai/explain:
+    post:
+      summary: Brief explanation for a card or text
+      responses:
+        "200": { description: OK }
+  /stats/overview:
+    get:
+      summary: Simple learning stats
+      responses:
+        "200": { description: OK }

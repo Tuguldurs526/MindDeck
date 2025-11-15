@@ -3,9 +3,16 @@ import "dotenv/config";
 import express from "express";
 import morgan from "morgan";
 import { connectDB } from "./config/db.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import cardRoutes from "./routes/cardRoutes.js";
 import deckRoutes from "./routes/deckRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import statsRoutes from "./routes/statsRoutes.js";
+
+app.use("/reviews", reviewRoutes);
+app.use("/ai", aiRoutes);
+app.use("/stats", statsRoutes);
 
 const app = express();
 
