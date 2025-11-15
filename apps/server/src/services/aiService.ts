@@ -2,25 +2,19 @@
 import OpenAI from "openai";
 
 const MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-
 let _client: OpenAI | null = null;
+
 function getClient(): OpenAI {
   if (_client) return _client;
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    // If tests stub callLLM, they won't hit here. If they don't, fail clearly.
-    throw new Error("[aiService] OPENAI_API_KEY is not set");
-  }
+  if (!apiKey) throw new Error("[aiService] OPENAI_API_KEY is not set");
   _client = new OpenAI({ apiKey });
   return _client;
 }
 
-/** Extract plain text from Responses API result */
 function extractText(res: any): string {
-  if (res?.output_text && typeof res.output_text === "string") {
-    const s = res.output_text.trim();
-    if (s) return s;
-  }
+  if (typeof res?.output_text === "string" && res.output_text.trim())
+    return res.output_text.trim();
   try {
     const pieces = (res?.output ?? [])
       .flatMap((o: any) => o?.content ?? [])
@@ -32,34 +26,49 @@ function extractText(res: any): string {
   return JSON.stringify(res);
 }
 
-/** Single seam; tests spy on this to avoid network */
+async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error(`LLM timeout after ${ms}ms`)),
+      ms
+    );
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
+}
+
 export async function callLLM(
   systemPrompt: string,
   userPrompt: string,
   opts?: { maxOutputTokens?: number; temperature?: number; timeoutMs?: number }
 ): Promise<string> {
-  const maxOutputTokens = opts?.maxOutputTokens ?? 250;
+  const max_output_tokens = opts?.maxOutputTokens ?? 250;
   const temperature = opts?.temperature ?? 0.2;
   const timeoutMs = opts?.timeoutMs ?? 15000;
-
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), timeoutMs);
 
   let attempt = 0;
   while (true) {
     try {
-      const res = await getClient().responses.create({
-        model: MODEL,
-        input: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_output_tokens: maxOutputTokens,
-        temperature,
-        // @ts-ignore
-        signal: ac.signal,
-      });
-      clearTimeout(timer);
+      const res = await withTimeout(
+        getClient().responses.create({
+          model: MODEL,
+          input: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          max_output_tokens,
+          temperature,
+        }),
+        timeoutMs
+      );
       return extractText(res);
     } catch (err: any) {
       attempt++;
@@ -67,12 +76,11 @@ export async function callLLM(
       const retriable =
         status === 429 ||
         (status >= 500 && status < 600) ||
-        err?.name === "AbortError";
+        /timeout/i.test(String(err?.message));
       if (attempt <= 2 && retriable) {
         await new Promise((r) => setTimeout(r, 400 * attempt));
         continue;
       }
-      clearTimeout(timer);
       throw err;
     }
   }
@@ -80,7 +88,7 @@ export async function callLLM(
 
 export async function aiExplain(prompt: string): Promise<string> {
   return callLLM(
-    "Explain briefly and clearly for a CS student. Avoid fluff. Prefer 3–5 sentences. If the input is malformed, state the assumption you made.",
+    "Explain briefly and clearly for a CS student. Avoid fluff. Prefer 3–5 sentences. If input is ambiguous, state assumptions.",
     prompt,
     { maxOutputTokens: 300, temperature: 0.2 }
   );

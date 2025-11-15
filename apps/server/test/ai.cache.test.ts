@@ -1,44 +1,69 @@
+// test/ai.cache.test.ts
+// 1) Hoisted module mock: must come BEFORE importing app/controllers
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+vi.mock("../src/services/aiService.js", () => {
+  return {
+    // stable async fns returning deterministic text; no network, no API key
+    aiExplain: vi.fn(async () => "X"),
+    aiHint: vi.fn(async () => "H"),
+    // if something calls this by mistake, keep it stubbed too
+    callLLM: vi.fn(async () => "X"),
+  };
+});
+
 import request from "supertest";
-import { describe, expect, it, vi } from "vitest";
-import Card from "../src/models/Card.js";
-import Deck from "../src/models/Deck.js";
-import User from "../src/models/User.js";
-import * as aiSvc from "../src/services/aiService.js";
-import "./setup-env";
+import { createApp } from "../src/app.js";
+import * as aiSvc from "../src/services/aiService.js"; // the mocked module
 import { setupTestDB, teardownTestDB } from "./setup.js";
 
+let app: ReturnType<typeof createApp>;
+let headers: Record<string, string>;
+
+async function auth() {
+  const email = "tugo@test.com";
+  const password = "Passw0rd!";
+  await request(app)
+    .post("/auth/register")
+    .send({ username: "tugo", email, password })
+    .catch(() => {});
+  const res = await request(app).post("/auth/login").send({ email, password });
+  headers = { Authorization: "Bearer " + res.body.token };
+}
+
+beforeAll(async () => {
+  // ensure tests never try to use a real key
+  process.env.OPENAI_API_KEY = "ignored-in-tests";
+  await setupTestDB();
+  app = createApp();
+  await auth();
+});
+
+afterAll(async () => {
+  await teardownTestDB();
+  vi.restoreAllMocks();
+});
+
 describe("AI cache", () => {
-  let app: any, token: string, cardId: string;
-
-  beforeAll(async () => {
-    await setupTestDB();
-    // create minimal app or import { app } if exported from index.ts
-    app = (await import("../src/index.js")).app;
-
-    const u = await User.create({
-      username: "t",
-      email: "t@t.com",
-      passwordHash: "x",
-    });
-    const d = await Deck.create({ title: "T", user: u._id });
-    const c = await Card.create({ front: "F", back: "B", deck: d._id });
-    cardId = c._id.toString();
-
-    // mint a JWT however your tests already do it; or hit /auth/register/login
-    // For brevity, skip auth trick here if your test helpers exist.
-  });
-
-  afterAll(async () => {
-    await teardownTestDB();
-  });
-
   it("hits model once, then uses cache", async () => {
-    const spy = vi.spyOn(aiSvc, "callLLM").mockResolvedValue("X");
+    // we assert on the hoisted mock exported symbol
+    const spy = aiSvc.aiExplain as unknown as ReturnType<typeof vi.fn>;
 
-    const headers = {}; // fill with Authorization if your route requires it
+    // Use the TEXT branch so no ObjectId cast occurs
+    const payload = { text: "Explain spaced repetition like I'm 20." };
 
-    await request(app).post("/ai/explain").set(headers).send({ cardId });
-    await request(app).post("/ai/explain").set(headers).send({ cardId });
+    const r1 = await request(app)
+      .post("/ai/explain")
+      .set(headers)
+      .send(payload);
+    expect(r1.status).toBe(200);
+    expect(r1.body).toMatchObject({ cached: false, text: "X" });
+
+    const r2 = await request(app)
+      .post("/ai/explain")
+      .set(headers)
+      .send(payload);
+    expect(r2.status).toBe(200);
+    expect(r2.body).toMatchObject({ cached: true, text: "X" });
 
     expect(spy).toHaveBeenCalledTimes(1);
   });
