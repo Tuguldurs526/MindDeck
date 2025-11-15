@@ -1,8 +1,11 @@
+// apps/server/src/index.ts
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import morgan from "morgan";
 import { connectDB } from "./config/db.js";
+
+// routes
 import aiRoutes from "./routes/aiRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import cardRoutes from "./routes/cardRoutes.js";
@@ -10,13 +13,8 @@ import deckRoutes from "./routes/deckRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
 
-app.use("/reviews", reviewRoutes);
-app.use("/ai", aiRoutes);
-app.use("/stats", statsRoutes);
-
 const app = express();
-
-app.disable("x-powered-by"); // tiny hardening
+app.disable("x-powered-by");
 
 // CORS + parsing + logging
 const origins = (process.env.CORS_ORIGINS ?? "")
@@ -24,7 +22,7 @@ const origins = (process.env.CORS_ORIGINS ?? "")
   .map((s) => s.trim())
   .filter(Boolean);
 app.use(cors({ origin: origins.length ? origins : "*", credentials: false }));
-app.use(express.json({ limit: "1mb" })); // sane body limit
+app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 
 // Health and root
@@ -33,15 +31,18 @@ app.get("/", (_req, res) =>
   res.json({ name: "Minddeck API", health: "/api/health" })
 );
 
-// Real routes (must come BEFORE 404)
+// Real routes (must be BEFORE 404)
 app.use("/auth", authRoutes);
 app.use("/cards", cardRoutes);
 app.use("/decks", deckRoutes);
+app.use("/reviews", reviewRoutes);
+app.use("/ai", aiRoutes);
+app.use("/stats", statsRoutes);
 
-// 404 catch-all (must be LAST normal middleware)
+// 404 catch-all
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 
-// Error handler (must be last)
+// Centralized error handler
 app.use(
   (
     err: any,
@@ -68,5 +69,4 @@ connectDB()
     process.exit(1);
   });
 
-// Optional export if you ever add tests later
 export { app };
