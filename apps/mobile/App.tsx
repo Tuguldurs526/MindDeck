@@ -1,26 +1,29 @@
-import React from "react";
-import { SafeAreaView, Text, View, Button } from "react-native";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 export default function App() {
-  const [health, setHealth] = React.useState<string>("(tap to check API)");
-
-  async function checkApi() {
-    try {
-      const res = await fetch("http://localhost:5000/api/health");
-      const json = await res.json();
-      setHealth(JSON.stringify(json));
-    } catch (e: any) {
-      setHealth(String(e.message ?? e));
-    }
-  }
-
   return (
-    <SafeAreaView>
-      <View style={{ padding: 24 }}>
-        <Text style={{ fontSize: 24, marginBottom: 10 }}>Minddeck Mobile</Text>
-        <Button title="Check API" onPress={checkApi} />
-        <Text style={{ marginTop: 12 }}>{health}</Text>
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Text style={styles.text}>🎉 Minddeck Mobile Works!</Text>
+      <Text style={styles.subtitle}>Your app is running successfully</Text>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  text: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+});
