@@ -3,9 +3,9 @@ import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import morgan from "morgan";
-import authRoutes from "./routes/authRoutes.js";
-import cardRoutes from "./routes/cardRoutes.js";
-import deckRoutes from "./routes/deckRoutes.js";
+import authRoutes from "./src/routes/authRoutes.js";
+import cardRoutes from "./src/routes/cardRoutes.js";
+import deckRoutes from "./src/routes/deckRoutes.js";
 
 export const createApp = () => {
   const app = express();
