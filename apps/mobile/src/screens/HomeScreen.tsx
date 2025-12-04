@@ -1,11 +1,11 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   FlatList,
   SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
@@ -42,7 +42,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const { user, logout } = useAuth();
 
   const renderDeckCard = ({ item }: { item: typeof sampleDecks[0] }) => (
-    <TouchableOpacity style={[styles.deckCard, { borderLeftColor: item.color }]}>
+    <TouchableOpacity
+      style={[styles.deckCard, { borderLeftColor: item.color }]}
+      // go straight to DeckDetail screen for this deck
+      onPress={() =>
+        navigation.navigate('DeckDetail', {
+          deckId: item.id,
+          title: item.name,
+        })
+      }
+    >
       <View style={styles.deckInfo}>
         <Text style={styles.deckName}>{item.name}</Text>
         <Text style={styles.deckStats}>
@@ -93,7 +102,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         />
       </View>
 
-      <TouchableOpacity style={styles.addButton}>
+      {/* This opens the DeckListScreen with create/delete etc. */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate('Decks')}
+      >
         <Text style={styles.addButtonText}>+ New Deck</Text>
       </TouchableOpacity>
     </SafeAreaView>

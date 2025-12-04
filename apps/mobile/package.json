@@ -16,6 +16,7 @@
     "axios": "^1.6.2",
     "expo": "^51.0.0",
     "expo-constants": "~16.0.0",
+    "expo-router": "^6.0.16",
     "expo-status-bar": "~1.12.1",
     "formik": "^2.4.9",
     "react": "18.2.0",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@expo/server": "^0.7.5",
     "@types/jest": "^30.0.0",
     "@types/react": "~18.2.45",
     "jest": "^30.2.0",
