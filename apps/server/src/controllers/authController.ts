@@ -1,9 +1,8 @@
+// apps/server/src/controllers/authController.ts
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import User from "../models/User.js";
 import { assertJwtEnv, signJwt } from "../utils/jwt.js";
-
-assertJwtEnv(); // fail fast at load time if secret is missing
 
 function normEmail(raw: unknown) {
   return String(raw ?? "")
@@ -16,6 +15,9 @@ function normName(raw: unknown) {
 
 export async function register(req: Request, res: Response) {
   try {
+    // ensure JWT secret exists when the endpoint is actually used
+    assertJwtEnv();
+
     const username = normName((req.body as any).username);
     const email = normEmail((req.body as any).email);
     const password = String((req.body as any).password ?? "");
@@ -43,7 +45,6 @@ export async function register(req: Request, res: Response) {
       },
     });
   } catch (e: any) {
-    // catch duplicate key race (E11000)
     if (e?.code === 11000) {
       return res.status(409).json({ error: "Email in use" });
     }
@@ -53,6 +54,9 @@ export async function register(req: Request, res: Response) {
 
 export async function login(req: Request, res: Response) {
   try {
+    // ensure JWT secret exists when the endpoint is actually used
+    assertJwtEnv();
+
     const email = normEmail((req.body as any).email);
     const password = String((req.body as any).password ?? "");
 
@@ -61,7 +65,6 @@ export async function login(req: Request, res: Response) {
     }
 
     const user = await User.findOne({ email });
-    // do not leak which part failed
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
     const ok = await bcrypt.compare(password, user.passwordHash);

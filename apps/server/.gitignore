@@ -8,3 +8,6 @@ yarn-error.log*
 pnpm-debug.log*
 coverage
 *.tsbuildinfo
+.env.local
+apps/*/.env
+apps/*/.env.local

@@ -1,5 +1,6 @@
-// Make libs behave in test mode
 process.env.NODE_ENV = process.env.NODE_ENV || "test";
+process.env.JWT_SECRET = process.env.JWT_SECRET || "testsecret";
+process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || "test-key";
 
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";

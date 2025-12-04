@@ -36,3 +36,5 @@ apps/mobile/ios/
 
 # vercel / misc deploy outputs
 .vercel/
+
+_patch/
