@@ -1,0 +1,5 @@
+@'
+{
+  "extends": "next/core-web-vitals"
+}
+'@ | Set-Content .eslintrc.json -Encoding UTF8

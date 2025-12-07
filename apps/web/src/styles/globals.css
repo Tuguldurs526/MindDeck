@@ -1,0 +1,22 @@
+:root {
+  --md-bg: #020617;
+  --md-fg: #e5e7eb;
+  --md-accent: #38bdf8;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--md-bg);
+  color: var(--md-fg);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
