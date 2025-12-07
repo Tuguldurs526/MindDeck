@@ -1,19 +1,7 @@
-// test/ai.cache.test.ts
-// 1) Hoisted module mock: must come BEFORE importing app/controllers
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-vi.mock("../src/services/aiService.js", () => {
-  return {
-    // stable async fns returning deterministic text; no network, no API key
-    aiExplain: vi.fn(async () => "X"),
-    aiHint: vi.fn(async () => "H"),
-    // if something calls this by mistake, keep it stubbed too
-    callLLM: vi.fn(async () => "X"),
-  };
-});
-
 import request from "supertest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app.js";
-import * as aiSvc from "../src/services/aiService.js"; // the mocked module
+import * as aiSvc from "../src/services/aiService.js";
 import { setupTestDB, teardownTestDB } from "./setup.js";
 
 let app: ReturnType<typeof createApp>;
@@ -24,15 +12,13 @@ async function auth() {
   const password = "Passw0rd!";
   await request(app)
     .post("/auth/register")
-    .send({ username: "tugo", email, password })
+    .send({ username: "t", email, password })
     .catch(() => {});
   const res = await request(app).post("/auth/login").send({ email, password });
   headers = { Authorization: "Bearer " + res.body.token };
 }
 
 beforeAll(async () => {
-  // ensure tests never try to use a real key
-  process.env.OPENAI_API_KEY = "ignored-in-tests";
   await setupTestDB();
   app = createApp();
   await auth();
@@ -40,31 +26,55 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await teardownTestDB();
-  vi.restoreAllMocks();
 });
 
 describe("AI cache", () => {
   it("hits model once, then uses cache", async () => {
-    // we assert on the hoisted mock exported symbol
-    const spy = aiSvc.aiExplain as unknown as ReturnType<typeof vi.fn>;
+    const spy = vi.spyOn(aiSvc, "callLLM").mockResolvedValue("X");
 
-    // Use the TEXT branch so no ObjectId cast occurs
-    const payload = { text: "Explain spaced repetition like I'm 20." };
-
+    // text flow
     const r1 = await request(app)
       .post("/ai/explain")
       .set(headers)
-      .send(payload);
+      .send({ text: "What is Big-O?" });
     expect(r1.status).toBe(200);
-    expect(r1.body).toMatchObject({ cached: false, text: "X" });
+    expect(spy).toHaveBeenCalledTimes(1);
 
     const r2 = await request(app)
       .post("/ai/explain")
       .set(headers)
-      .send(payload);
+      .send({ text: "What is Big-O?" });
     expect(r2.status).toBe(200);
-    expect(r2.body).toMatchObject({ cached: true, text: "X" });
-
     expect(spy).toHaveBeenCalledTimes(1);
-  });
+
+    // hint flow should also cache
+    const deck = await request(app)
+      .post("/decks")
+      .set(headers)
+      .send({ title: "D" });
+    const card = await request(app)
+      .post("/cards")
+      .set(headers)
+      .send({
+        deckId: deck.body.id ?? deck.body._id ?? deck.body.data?._id,
+        front: "2+2?",
+        back: "4",
+      });
+
+    const h1 = await request(app)
+      .post("/ai/hint")
+      .set(headers)
+      .send({ cardId: card.body.id ?? card.body._id });
+    expect(h1.status).toBe(200);
+    const callsAfterHint1 = spy.mock.calls.length;
+
+    const h2 = await request(app)
+      .post("/ai/hint")
+      .set(headers)
+      .send({ cardId: card.body.id ?? card.body._id });
+    expect(h2.status).toBe(200);
+    expect(spy.mock.calls.length).toBe(callsAfterHint1); // no extra call
+
+    spy.mockRestore();
+  }, 20_000);
 });

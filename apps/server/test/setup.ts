@@ -1,40 +1,36 @@
-process.env.NODE_ENV = process.env.NODE_ENV || "test";
-process.env.JWT_SECRET = process.env.JWT_SECRET || "testsecret";
-process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || "test-key";
-
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
-import { connectDB } from "../src/config/db.js";
+import fs from "node:fs";
+import path from "node:path";
 
 let mongo: MongoMemoryServer | null = null;
 
 export async function setupTestDB() {
-  // Use local mongod only if explicitly requested
-  if (process.env.TEST_USE_LOCAL_MONGO === "true") {
-    process.env.MONGO_URI =
-      process.env.MONGO_URI || "mongodb://127.0.0.1:27017/minddeck_test";
-    process.env.JWT_SECRET = process.env.JWT_SECRET || "testsecret";
-    await connectDB();
-    return;
-  }
+  const downloadDir = path.join(
+    process.cwd(),
+    "apps",
+    "server",
+    ".cache",
+    "mongodb-binaries"
+  );
+  fs.mkdirSync(downloadDir, { recursive: true });
 
-  // Default: in-memory Mongo
-  mongo = await MongoMemoryServer.create();
-  process.env.MONGO_URI = mongo.getUri();
-  process.env.JWT_SECRET = "testsecret";
-  await connectDB();
-}
+  mongo = await MongoMemoryServer.create({
+    binary: { version: "7.0.14", downloadDir },
+    instance: { dbName: "minddeck_test" },
+  });
 
-export async function resetDB() {
-  const { collections } = mongoose.connection;
-  for (const key of Object.keys(collections)) {
-    await collections[key].deleteMany({});
-  }
+  const uri = mongo.getUri();
+  await mongoose.connect(uri, { dbName: "minddeck_test" } as any);
 }
 
 export async function teardownTestDB() {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
+  try {
+    await mongoose.connection.dropDatabase();
+  } catch {}
+  try {
+    await mongoose.connection.close();
+  } catch {}
   if (mongo) {
     await mongo.stop();
     mongo = null;

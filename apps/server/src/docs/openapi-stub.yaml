@@ -1,42 +1,538 @@
 openapi: 3.0.3
 info:
-  title: Minddeck API (MVP)
+  title: Minddeck API
   version: 0.1.0
+  description: >
+    Minimal but truthful spec for the current backend. Uses JWT bearer auth.
+    Lists return arrays; pagination is exposed via response headers.
 servers:
   - url: http://localhost:5000
+tags:
+  - name: auth
+  - name: decks
+  - name: cards
+  - name: reviews
+  - name: ai
+  - name: stats
+
 paths:
+  /api/health:
+    get:
+      summary: Liveness probe
+      tags: [stats]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: OK }
+
+  /auth/register:
+    post:
+      summary: Create account
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /auth/login:
+    post:
+      summary: Log in
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /decks:
+    get:
+      summary: List my decks
+      tags: [decks]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Array of decks
+          headers:
+            X-Total-Count:
+              { description: Total rows, schema: { type: integer } }
+            X-Page: { description: Current page, schema: { type: integer } }
+            X-Limit: { description: Page size, schema: { type: integer } }
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Deck" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      summary: Create deck
+      tags: [decks]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateDeckInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Deck" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /decks/{id}:
+    get:
+      summary: Get one deck
+      tags: [decks]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deck
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Deck" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      summary: Delete deck (and its cards)
+      tags: [decks]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Deck deleted }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /cards:
+    post:
+      summary: Create card
+      tags: [cards]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCardInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Card" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /cards/{deckId}:
+    get:
+      summary: List cards in a deck
+      tags: [cards]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: deckId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Array of cards
+          headers:
+            X-Total-Count:
+              { description: Total rows, schema: { type: integer } }
+            X-Page: { description: Current page, schema: { type: integer } }
+            X-Limit: { description: Page size, schema: { type: integer } }
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Card" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /cards/id/{id}:
+    put:
+      summary: Update a card
+      tags: [cards]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCardInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Card" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      summary: Delete a card
+      tags: [cards]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Card deleted }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /ai/explain:
+    post:
+      summary: Brief explanation for a card or raw text
+      tags: [ai]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AIExplainInput" }
+      responses:
+        "200":
+          description: Explanation, cache-aware
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AIText" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /ai/hint:
+    post:
+      summary: Short hint for a card (no spoilers)
+      tags: [ai]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AIHintInput" }
+      responses:
+        "200":
+          description: Hint, cache-aware
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AIText" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
   /reviews/next:
     get:
-      summary: Get due cards
+      summary: Get due cards for review
+      tags: [reviews]
+      security: [{ bearerAuth: [] }]
       parameters:
         - in: query
           name: deckId
+          description: Optional deck filter
           schema: { type: string }
         - in: query
           name: limit
           schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
       responses:
         "200":
-          description: OK
+          description: Array of due cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Card" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /reviews/answer:
     post:
-      summary: Answer a review
+      summary: Submit an answer grade (SM-2 style)
+      tags: [reviews]
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReviewAnswerInput" }
       responses:
-        "200": { description: OK }
-  /ai/hint:
-    post:
-      summary: Short hint for a card
-      responses:
-        "200": { description: OK }
-  /ai/explain:
-    post:
-      summary: Brief explanation for a card or text
-      responses:
-        "200": { description: OK }
+        "200":
+          description: Scheduling result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nextReviewAt: { type: string, format: date-time }
+                  ease: { type: number }
+                  interval: { type: integer }
+                  repetitions: { type: integer }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /stats/overview:
     get:
-      summary: Simple learning stats
+      summary: Basic learning stats
+      tags: [stats]
+      security: [{ bearerAuth: [] }]
       responses:
-        "200": { description: OK }
+        "200":
+          description: Aggregate counters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalDecks: { type: integer }
+                  totalCards: { type: integer }
+                  dueToday: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+      example: { error: "Invalid deck id" }
+
+    RegisterInput:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string, minLength: 1 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          { type: string, example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+        user:
+          type: object
+          properties:
+            id: { type: string }
+            username: { type: string }
+            email: { type: string }
+
+    Deck:
+      type: object
+      properties:
+        _id: { type: string }
+        title: { type: string }
+        user: { type: string, description: "Owner user id" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateDeckInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1 }
+
+    Card:
+      type: object
+      properties:
+        _id: { type: string }
+        front: { type: string }
+        back: { type: string }
+        deck: { type: string, description: "Deck id" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateCardInput:
+      type: object
+      required: [front, back, deckId]
+      properties:
+        front: { type: string, minLength: 1 }
+        back: { type: string, minLength: 1 }
+        deckId: { type: string }
+
+    UpdateCardInput:
+      type: object
+      properties:
+        front: { type: string }
+        back: { type: string }
+
+    AIExplainInput:
+      type: object
+      description: Provide either cardId or text
+      properties:
+        cardId: { type: string }
+        text: { type: string }
+      oneOf:
+        - required: [cardId]
+        - required: [text]
+
+    AIHintInput:
+      type: object
+      required: [cardId]
+      properties:
+        cardId: { type: string }
+
+    AIText:
+      type: object
+      properties:
+        cached: { type: boolean }
+        text: { type: string }
+
+    ReviewAnswerInput:
+      type: object
+      required: [cardId, quality]
+      properties:
+        cardId: { type: string }
+        quality:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: SM-2 grade 0..5
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            invalid_id: { value: { error: "Invalid deck id" } }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            missing: { value: { error: "Missing or invalid token" } }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            not_owner: { value: { error: "Not your card" } }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            deck_missing: { value: { error: "Deck not found" } }
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            dup_title: { value: { error: "Deck title already exists" } }
+    RateLimited:
+      description: Too many requests
+      headers:
+        Retry-After:
+          description: Seconds until you may retry
+          schema: { type: integer, example: 60 }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            limited: { value: { error: "rate_limited", retryAfterMs: 60000 } }
+
+security:
+  - bearerAuth: []

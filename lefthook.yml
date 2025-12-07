@@ -1,0 +1,35 @@
+pre-push:
+  parallel: true
+  commands:
+    test:
+      run: npm -w apps/server test
+
+    import-suffix:
+      # Force PowerShell so we don't play quote-Twister with cmd/sh
+      runner: powershell
+      # Limit the hook to server TS files
+      glob: "apps/server/src/**/*.ts"
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $failed = $false
+
+        # Only staged .ts files under apps/server/src
+        $files = git diff --cached --name-only -- 'apps/server/src/**/*.ts'
+
+        foreach ($f in $files) {
+          if (-not (Test-Path $f)) { continue }
+          $c = Get-Content -Raw -LiteralPath $f
+
+          # Flag imports/exports/dynamic imports ending with .ts or .js before the quote/paren
+          $bad = [regex]::IsMatch(
+            $c,
+            '(from\s+["''][^"''\r\n]+\.(?:ts|js)["'']|\bexport\s+\*\s+from\s+["''][^"''\r\n]+\.(?:ts|js)["'']|\bimport\s*\(\s*["''][^"''\r\n]+\.(?:ts|js)["'']\s*\))'
+          )
+
+          if ($bad) {
+            Write-Host "Bad import extension in $f" -ForegroundColor Red
+            $failed = $true
+          }
+        }
+
+        if ($failed) { exit 1 }

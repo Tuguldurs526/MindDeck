@@ -1,21 +1,12 @@
-import jwt from "jsonwebtoken";
-
-const ALG: jwt.Algorithm = "HS256";
-const ISS = process.env.JWT_ISSUER || "minddeck";
-const AUD = process.env.JWT_AUDIENCE || "minddeck-clients";
-const EXPIRES_IN = process.env.JWT_EXPIRES_IN || "15m";
+// src/utils/jwt.ts
+import jwt, { type Secret, type SignOptions } from "jsonwebtoken";
 
 export function assertJwtEnv() {
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET missing. Set it in apps/server/.env");
-  }
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET not set");
 }
 
-export function signJwt(payload: Record<string, unknown>) {
-  return jwt.sign(payload, process.env.JWT_SECRET as string, {
-    algorithm: ALG,
-    expiresIn: EXPIRES_IN,
-    issuer: ISS,
-    audience: AUD,
-  });
+export function signJwt(payload: object): string {
+  const secret: Secret = process.env.JWT_SECRET as Secret;
+  const opts: SignOptions = { algorithm: "HS256", expiresIn: "7d" };
+  return jwt.sign(payload, secret, opts);
 }

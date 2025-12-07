@@ -1,16 +1,22 @@
-// apps/server/src/middleware/validate.ts
-import type { AnyZodObject } from "zod";
-import { ZodError } from "zod";
+// src/middleware/validate.ts
+import type { RequestHandler } from "express";
+import type { AnyZodObject, ZodTypeAny } from "zod";
 
-export const validate =
-  (schema: AnyZodObject) => (req: any, res: any, next: any) => {
+type Schema = AnyZodObject | ZodTypeAny;
+
+export const validate = (schema: Schema): RequestHandler => {
+  return (req, res, next) => {
     try {
-      schema.parse({ body: req.body, params: req.params, query: req.query });
-      next();
-    } catch (e) {
-      if (e instanceof ZodError) {
-        return res.status(400).json({ error: e.flatten() });
+      if (req.method === "GET" || req.method === "DELETE") {
+        // Always validate params + query together
+        schema.parse({ ...req.params, ...req.query });
+      } else {
+        // POST / PUT / PATCH => validate body
+        schema.parse(req.body);
       }
-      return res.status(500).json({ error: "Validation failed" });
+      next();
+    } catch (err) {
+      return res.status(400).json({ error: "Validation error", details: String(err) });
     }
   };
+};

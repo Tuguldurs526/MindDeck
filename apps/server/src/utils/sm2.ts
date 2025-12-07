@@ -26,3 +26,6 @@ export function nextSM2(state: SM2State, rating: Rating): SM2State & { quality: 
 
   return { repetition: rep, interval: I, efactor: E, quality: q };
 }
+
+
+
