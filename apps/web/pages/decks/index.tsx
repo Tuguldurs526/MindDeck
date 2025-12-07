@@ -1,6 +1,7 @@
+// apps/web/pages/decks/index.tsx
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiListDecks, type Deck } from "shared-api";
+import { apiCreateDeck, apiListDecks, type Deck } from "shared-api";
 import { RequireAuth } from "../../src/components/RequireAuth";
 import { useAuth } from "../../src/context/AuthContext";
 
@@ -9,6 +10,22 @@ function DeckListInner() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const handleCreateDeck = async () => {
+    if (!token) return;
+    const title = window.prompt("Deck title?");
+    if (!title) return;
+
+    try {
+      setLoading(true);
+      const newDeck = await apiCreateDeck(token, title);
+      setDecks((prev) => [...prev, newDeck]);
+    } catch (e: any) {
+      setError(e.message || "Failed to create deck");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -20,7 +37,8 @@ function DeckListInner() {
       setError("");
 
       try {
-        const res = await apiListDecks(token); // res: { items: Deck[] }
+        // backend returns: { items: Deck[] }
+        const res = await apiListDecks(token);
         const items = Array.isArray(res.items) ? res.items : [];
         if (!cancelled) {
           setDecks(items);
@@ -44,11 +62,26 @@ function DeckListInner() {
 
   return (
     <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between" }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <h1>Your Decks</h1>
         <div>
+          <button
+            type="button"
+            onClick={handleCreateDeck}
+            style={{ marginRight: "1rem" }}
+          >
+            + New deck
+          </button>
           <span style={{ marginRight: "1rem" }}>{user?.username}</span>
-          <button onClick={logout}>Logout</button>
+          <button type="button" onClick={logout}>
+            Logout
+          </button>
         </div>
       </header>
 

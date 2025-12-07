@@ -83,17 +83,29 @@ type DeckListResponse = {
   items: Deck[];
 };
 
-export async function apiListDecks(token: string) {
+// Returns Deck[]
+export async function apiListDecks(token: string): Promise<Deck[]> {
   const res = await request<DeckListResponse>(
     "/decks",
     { method: "GET" },
     token,
   );
-  return res.items; // 👈 returns Deck[]
+  return Array.isArray(res.items) ? res.items : [];
 }
 
 export async function apiGetDeck(id: string, token: string) {
   return request<Deck>(`/decks/${id}`, { method: "GET" }, token);
+}
+
+export async function apiCreateDeck(token: string, title: string) {
+  return request<Deck>(
+    "/decks",
+    {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    },
+    token,
+  );
 }
 
 // ---- Reviews ----
