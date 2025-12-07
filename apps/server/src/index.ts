@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { createApp } from "./app.js";
-import { connectDB } from "./config/db.js";
+import { createApp } from "./app";
+import { connectDB } from "./config/db";
 
 const PORT = Number(process.env.PORT) || 5000;
 
@@ -16,3 +16,6 @@ main().catch((err) => {
   console.error("Failed to start:", err);
   process.exit(1);
 });
+
+
+

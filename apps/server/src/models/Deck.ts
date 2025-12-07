@@ -1,14 +1,17 @@
-import mongoose from "mongoose";
+// apps/server/src/models/Deck.ts
+import mongoose, { Schema, Types } from "mongoose";
 
-const deckSchema = new mongoose.Schema(
+const DeckSchema = new Schema(
   {
-    title: { type: String, required: true, trim: true },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    title: { type: String, required: true },
+
+    // ✅ consistent with Card.owner and routes
+    owner: { type: Types.ObjectId, ref: "User", required: true, index: true },
   },
   { timestamps: true }
 );
 
-// add near the bottom, before export
-deckSchema.index({ user: 1 });
-deckSchema.index({ user: 1, title: 1 }, { unique: true }); // prevent duplicate titles per user
-export default mongoose.model("Deck", deckSchema);
+// Unique per user: a user can't have two decks with same title
+DeckSchema.index({ owner: 1, title: 1 }, { unique: true });
+
+export default mongoose.models.Deck ?? mongoose.model("Deck", DeckSchema);

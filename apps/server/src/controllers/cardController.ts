@@ -1,115 +1,198 @@
-import { Request, Response } from "express";
-import mongoose from "mongoose";
-import Card from "../models/Card.js";
-import Deck from "../models/Deck.js";
+// apps/server/src/controllers/cardController.ts
+import type { NextFunction, Request, Response } from "express";
+import { Types } from "mongoose";
+import Card from "../models/Card.js"; // default export
+import Deck from "../models/Deck.js"; // you already have this for /decks
 
-const { isValidObjectId } = mongoose;
-const getUserId = (req: Request) => (req as any).user?.sub as string;
+/**
+ * Helper: simple deck ownership check that does not rely on a separate service
+ */
+async function assertDeckOwned(deckId: string, userId: string) {
+  if (!Types.ObjectId.isValid(deckId)) {
+    const err: any = new Error("Invalid deck id");
+    err.status = 400;
+    throw err;
+  }
 
-// CREATE
-export async function createCard(req: Request, res: Response) {
+  const deck = await Deck.findOne({ _id: deckId, ownerId: userId });
+  if (!deck) {
+    const err: any = new Error("Deck not found or not owned by user");
+    err.status = 404;
+    throw err;
+  }
+}
+
+/**
+ * POST /cards
+ * Body: { front, back, deckId }
+ * Creates a new card owned by the authenticated user.
+ */
+export async function createCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const { front, back, deckId } = req.body as {
-      front?: string;
-      back?: string;
-      deckId?: string;
-    };
-    if (!front?.trim() || !back?.trim() || !deckId)
-      return res.status(400).json({ error: "Missing fields" });
-    if (!isValidObjectId(deckId))
-      return res.status(400).json({ error: "Invalid deckId" });
+    const { front, back, deckId } = req.body;
 
-    const deck = await Deck.findOne({
-      _id: deckId,
-      user: getUserId(req),
-    }).select("_id");
-    if (!deck)
-      return res.status(403).json({ error: "Deck not found or not yours" });
+    if (!front || !back || !deckId) {
+      const err: any = new Error("Missing fields");
+      err.status = 400;
+      throw err;
+    }
+
+    // user id is typically attached by verifyToken middleware
+    const userId = (req as any).userId || (req as any).user?.id;
+    if (!userId) {
+      const err: any = new Error("User not authenticated");
+      err.status = 401;
+      throw err;
+    }
+
+    await assertDeckOwned(deckId, userId);
+
+    const now = new Date();
 
     const card = await Card.create({
-      front: front.trim(),
-      back: back.trim(),
-      deck: deckId,
+      front,
+      back,
+      deckId,
+      ownerId: userId,
+      createdAt: now,
+      updatedAt: now,
+      // SM-2 initial state; matches what reviews.e2e expects
+      sm2: {
+        interval: 1,
+        reps: 0,
+        efactor: 2.5,
+        due: now,
+      },
     });
+
     return res.status(201).json(card);
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message });
+  } catch (err) {
+    return next(err);
   }
 }
 
-// READ BY DECK
-export async function getCardsByDeck(req: Request, res: Response) {
+/**
+ * GET /cards?deck=<deckId>&limit=<n>&cursor=<id>
+ * Paginates cards by deck.
+ */
+export async function listCards(req: Request, res: Response, next: NextFunction) {
   try {
-    const { deckId } = req.params;
-    if (!isValidObjectId(deckId))
-      return res.status(400).json({ error: "Invalid deckId" });
+    const deckId = req.query.deck as string;
+    const limit = Number(req.query.limit) || 10;
+    const cursor = req.query.cursor as string | undefined;
 
-    const deck = await Deck.findOne({
-      _id: deckId,
-      user: getUserId(req),
-    }).select("_id");
-    if (!deck)
-      return res.status(403).json({ error: "Deck not found or not yours" });
+    if (!deckId || !Types.ObjectId.isValid(deckId)) {
+      const err: any = new Error("Invalid deck id");
+      err.status = 400;
+      throw err;
+    }
 
-    // optional pagination: /cards/:deckId?limit=50&page=1
-    const limit = Math.min(Number(req.query.limit ?? 50), 200);
-    const page = Math.max(Number(req.query.page ?? 1), 1);
-    const cards = await Card.find({ deck: deckId })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    const userId = (req as any).userId || (req as any).user?.id;
+    if (!userId) {
+      const err: any = new Error("User not authenticated");
+      err.status = 401;
+      throw err;
+    }
 
-    return res.json(cards); // keep the same response shape (array)
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message });
+    await assertDeckOwned(deckId, userId);
+
+    const query: any = { deckId };
+    if (cursor && Types.ObjectId.isValid(cursor)) {
+      query._id = { $gt: cursor };
+    }
+
+    const items = await Card.find(query)
+      .sort({ _id: 1 })
+      .limit(limit + 1);
+
+    let nextCursor: string | null = null;
+    if (items.length > limit) {
+      const last = items[items.length - 1];
+      nextCursor = String(last._id);
+      items.pop();
+    }
+
+    return res.status(200).json({
+      items,
+      nextCursor,
+    });
+  } catch (err) {
+    return next(err);
   }
 }
 
-// UPDATE
-export async function updateCard(req: Request, res: Response) {
+/**
+ * PATCH /cards/:id
+ * Allows updating front/back content.
+ */
+export async function updateCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
-    if (!isValidObjectId(id))
-      return res.status(400).json({ error: "Invalid card id" });
+    const cardId = req.params.id;
+    const { front, back } = req.body;
 
-    const card = await Card.findById(id).populate("deck", "user _id");
-    if (!card) return res.status(404).json({ error: "Card not found" });
+    if (!Types.ObjectId.isValid(cardId)) {
+      const err: any = new Error("Invalid card id");
+      err.status = 400;
+      throw err;
+    }
 
-    if (String((card.deck as any).user) !== String(getUserId(req)))
-      return res.status(403).json({ error: "Not your card" });
+    const card = await Card.findById(cardId);
+    if (!card) {
+      const err: any = new Error("Card not found");
+      err.status = 404;
+      throw err;
+    }
 
-    // allow only front/back changes
-    const { front, back } = req.body as { front?: string; back?: string };
-    if (typeof front === "string") card.front = front.trim();
-    if (typeof back === "string") card.back = back.trim();
+    const userId = (req as any).userId || (req as any).user?.id;
+    if (!userId || String(card.ownerId) !== String(userId)) {
+      const err: any = new Error("Forbidden");
+      err.status = 403;
+      throw err;
+    }
 
-    await card.save(); // bumps updatedAt
+    if (front !== undefined) card.front = front;
+    if (back !== undefined) card.back = back;
+    card.updatedAt = new Date();
 
-    // normalize response: deck as id (not populated object)
-    const clean = await Card.findById(card._id).lean();
-    return res.json(clean);
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message });
+    await card.save();
+
+    return res.status(200).json(card);
+  } catch (err) {
+    return next(err);
   }
 }
 
-// DELETE
-export async function deleteCard(req: Request, res: Response) {
+/**
+ * DELETE /cards/:id
+ */
+export async function deleteCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
-    if (!isValidObjectId(id))
-      return res.status(400).json({ error: "Invalid card id" });
+    const cardId = req.params.id;
 
-    const card = await Card.findById(id).populate("deck", "user _id");
-    if (!card) return res.status(404).json({ error: "Card not found" });
+    if (!Types.ObjectId.isValid(cardId)) {
+      const err: any = new Error("Invalid card id");
+      err.status = 400;
+      throw err;
+    }
 
-    if (String((card.deck as any).user) !== String(getUserId(req)))
-      return res.status(403).json({ error: "Not your card" });
+    const card = await Card.findById(cardId);
+    if (!card) {
+      const err: any = new Error("Card not found");
+      err.status = 404;
+      throw err;
+    }
 
-    await Card.findByIdAndDelete(id);
-    return res.json({ message: "Card deleted" });
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message });
+    const userId = (req as any).userId || (req as any).user?.id;
+    if (!userId || String(card.ownerId) !== String(userId)) {
+      const err: any = new Error("Forbidden");
+      err.status = 403;
+      throw err;
+    }
+
+    await card.deleteOne();
+
+    return res.status(204).send();
+  } catch (err) {
+    return next(err);
   }
 }

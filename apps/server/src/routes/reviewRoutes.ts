@@ -1,26 +1,25 @@
 import { Router } from "express";
 import { z } from "zod";
-import { validate } from "../middleware/validate.js";
-import { verifyToken } from "../middleware/authMiddleware.js";
-import { getNext, answer } from "../controllers/reviewController.js";
+import { answerReview, getQueue } from "../controllers/reviewController";
+import { verifyToken } from "../middleware/authMiddleware";
+import { validate } from "../middleware/validate";
 
 const router = Router();
 
-const nextSchema = z.object({
-  query: z.object({
-    deckId: z.string().optional(),
-    limit: z.coerce.number().min(1).max(100).optional(),
-  })
+const queueQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
 const answerSchema = z.object({
-  body: z.object({
-    cardId: z.string().min(1),
-    rating: z.enum(["again","hard","good","easy"]),
-  })
+  cardId: z.string().min(1),
+  quality: z.coerce.number().int().min(0).max(5),
 });
 
-router.get("/next", verifyToken, validate(nextSchema), getNext);
-router.post("/answer", verifyToken, validate(answerSchema), answer);
+// routes/reviewRoutes.ts
+router.get("/queue", verifyToken, validate(queueQuerySchema), getQueue);
+router.post("/answer", verifyToken, validate(answerSchema), answerReview);
 
 export default router;
+
+
+

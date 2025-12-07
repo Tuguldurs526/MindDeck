@@ -91,3 +91,37 @@ describe("Minddeck E2E", () => {
     expect(r2.status).toBe(409);
   });
 });
+
+it("lists cards with pagination", async () => {
+  const deck = await request(app)
+    .post("/decks")
+    .set(headers)
+    .send({ title: "P" });
+  const deckId = deck.body.id ?? deck.body._id;
+
+  for (let i = 0; i < 25; i++) {
+    await request(app)
+      .post("/cards")
+      .set(headers)
+      .send({ deckId, front: `Q${i}`, back: `A${i}` });
+  }
+
+  const page1 = await request(app)
+    .get(`/cards?deck=${deckId}&limit=10`)
+    .set(headers);
+  expect(page1.status).toBe(200);
+  expect(page1.body.items.length).toBe(10);
+  expect(page1.body.nextCursor).toBeTruthy();
+
+  const page2 = await request(app)
+    .get(`/cards?deck=${deckId}&limit=10&cursor=${page1.body.nextCursor}`)
+    .set(headers);
+  expect(page2.status).toBe(200);
+  expect(page2.body.items.length).toBe(10);
+
+  const page3 = await request(app)
+    .get(`/cards?deck=${deckId}&limit=10&cursor=${page2.body.nextCursor}`)
+    .set(headers);
+  expect(page3.status).toBe(200);
+  expect(page3.body.items.length).toBeLessThanOrEqual(10);
+});

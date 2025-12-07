@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import ReviewState from "../models/ReviewState.js";
-import Deck from "../models/Deck.js";
+import ReviewState from "../models/ReviewState";
+import Deck from "../models/Deck";
 
 export async function overview(req: Request, res: Response) {
   const userId = (req as any).user?.sub;
@@ -39,3 +39,6 @@ export async function overview(req: Request, res: Response) {
 
   res.json({ dueToday, reviewedToday, accuracy, streakDays: streak, byDeck });
 }
+
+
+
