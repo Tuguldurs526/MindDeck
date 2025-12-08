@@ -1,3 +1,4 @@
+//apps/web/src/components/RequireAuth.tsx
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";

@@ -7,6 +7,7 @@ import { useAuth } from "../../src/context/AuthContext";
 
 function DeckListInner() {
   const { token, user, logout } = useAuth();
+
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,7 +19,11 @@ function DeckListInner() {
 
     try {
       setLoading(true);
-      const newDeck = await apiCreateDeck(token, title);
+      setError("");
+
+      const newDeck = await apiCreateDeck(token, title.trim());
+
+      // append new deck to the list
       setDecks((prev) => [...prev, newDeck]);
     } catch (e: any) {
       setError(e.message || "Failed to create deck");
@@ -37,9 +42,8 @@ function DeckListInner() {
       setError("");
 
       try {
-        // backend returns: { items: Deck[] }
-        const res = await apiListDecks(token);
-        const items = Array.isArray(res.items) ? res.items : [];
+        // 👇 apiListDecks already returns Deck[]
+        const items = await apiListDecks(token);
         if (!cancelled) {
           setDecks(items);
         }
@@ -55,6 +59,7 @@ function DeckListInner() {
     };
 
     run();
+
     return () => {
       cancelled = true;
     };
@@ -89,7 +94,7 @@ function DeckListInner() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {!loading && !error && decks.length === 0 && (
-        <p>No decks yet. Create some via API or mobile.</p>
+        <p>No decks yet. Create some via API, mobile, or the button above.</p>
       )}
 
       {!loading && !error && decks.length > 0 && (

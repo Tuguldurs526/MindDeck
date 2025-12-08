@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    // 🚫 Do not run ESLint as part of `next build`
-    ignoreDuringBuilds: true,
-  },
+  reactStrictMode: true,
+
+  // 👇 This makes Next transpile the TypeScript from packages/shared-api
+  transpilePackages: ["shared-api"],
 };
 
 export default nextConfig;

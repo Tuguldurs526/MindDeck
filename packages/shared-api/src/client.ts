@@ -39,7 +39,7 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
-// ---- Auth ----
+// ------------ Auth ------------
 
 export type ApiUser = {
   id: string;
@@ -70,7 +70,7 @@ export async function apiRegister(
   });
 }
 
-// ---- Decks ----
+// ------------ Decks ------------
 
 export type Deck = {
   _id: string;
@@ -83,18 +83,19 @@ type DeckListResponse = {
   items: Deck[];
 };
 
-// Returns Deck[]
-export async function apiListDecks(token: string): Promise<Deck[]> {
-  const res = await request<DeckListResponse>(
+export async function apiListDecks(token: string) {
+  const res = await request<DeckListResponse | Deck[]>(
     "/decks",
     { method: "GET" },
     token,
   );
-  return Array.isArray(res.items) ? res.items : [];
-}
 
-export async function apiGetDeck(id: string, token: string) {
-  return request<Deck>(`/decks/${id}`, { method: "GET" }, token);
+  if (Array.isArray(res)) {
+    // backend returns bare array
+    return res;
+  }
+
+  return Array.isArray(res.items) ? res.items : [];
 }
 
 export async function apiCreateDeck(token: string, title: string) {
@@ -108,11 +109,87 @@ export async function apiCreateDeck(token: string, title: string) {
   );
 }
 
-// ---- Reviews ----
+export async function apiGetDeck(id: string, token: string) {
+  return request<Deck>(`/decks/${id}`, { method: "GET" }, token);
+}
 
+// ------------ Cards ------------
+
+export type Card = {
+  _id: string;
+  deck: string;
+  front: string;
+  back: string;
+  createdAt: string;
+  updatedAt: string;
+  // optional, backend sends them but UI doesn't need them yet:
+  owner?: string;
+  sm2?: any;
+};
+
+export async function apiListCards(token: string, deckId: string) {
+  const cards = await request<Card[]>(
+    `/cards/${deckId}`,
+    { method: "GET" },
+    token,
+  );
+
+  console.log("DEBUG apiListCards length =", cards.length, cards);
+  return cards;
+}
+
+export async function apiCreateCard(
+  token: string,
+  payload: { deckId: string; front: string; back: string },
+) {
+  const created = await request<Card>(
+    "/cards",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+
+  console.log("DEBUG apiCreateCard created =", created);
+  return created;
+}
+
+export async function apiUpdateCard(
+  token: string,
+  id: string,
+  payload: { front?: string; back?: string },
+) {
+  return request<Card>(
+    `/cards/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
+export async function apiDeleteCard(token: string, id: string) {
+  return request<{ success: boolean }>(
+    `/cards/${id}`,
+    {
+      method: "DELETE",
+    },
+    token,
+  );
+}
+
+// ------------ Reviews ------------
+
+// Be flexible about what the backend sends (cardId vs _id, etc.)
 export type ReviewCard = {
-  cardId: string;
-  deckId: string;
+  cardId?: string;
+  _id?: string;
+  id?: string;
+  card?: string;
+  deck?: string;
+  deckId?: string;
   front: string;
   back: string;
 };
@@ -122,16 +199,31 @@ export type ReviewQueueResponse = {
 };
 
 export async function apiGetReviewQueue(token: string, limit = 1) {
-  return request<ReviewQueueResponse>(
+  const res = await request<ReviewQueueResponse | ReviewCard[]>(
     `/reviews/queue?limit=${limit}`,
     { method: "GET" },
     token,
   );
+
+  if (Array.isArray(res)) {
+    return { items: res };
+  }
+
+  if (res && Array.isArray(res.items)) {
+    return res;
+  }
+
+  return { items: [] };
 }
+
+export type ReviewAnswerPayload = {
+  cardId: string;
+  quality: 0 | 1 | 2 | 3;
+};
 
 export async function apiAnswerReview(
   token: string,
-  payload: { cardId: string; quality: 0 | 1 | 2 | 3 },
+  payload: ReviewAnswerPayload,
 ) {
   return request<{ nextDue: string }>(
     "/reviews/answer",

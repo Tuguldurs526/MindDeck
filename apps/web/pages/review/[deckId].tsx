@@ -1,3 +1,4 @@
+// apps/web/pages/review/[deckId].tsx
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import {
@@ -19,15 +20,20 @@ function ReviewInner() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
+  const deckIdStr = typeof deckId === "string" ? deckId : "";
+
   const loadNext = async () => {
-    if (!token || typeof deckId !== "string") return;
+    if (!token) return;
+
     setLoading(true);
     setError("");
     setShowBack(false);
+
     try {
-      // you might filter by deck server-side, or just get global queue
+      // queue is global on the server; we just ask for 1 card
       const res = await apiGetReviewQueue(token, 1);
       const next = res.items[0];
+
       if (!next) {
         setDone(true);
         setCard(null);
@@ -42,58 +48,132 @@ function ReviewInner() {
   };
 
   useEffect(() => {
+    if (!token) return;
     loadNext();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deckId, token]);
+  }, [token]);
 
   const answer = async (quality: 0 | 1 | 2 | 3) => {
     if (!token || !card) return;
+
+    // Be very defensive about which field contains the card id
+    const cardId =
+      (card as any).cardId ??
+      (card as any)._id ??
+      (card as any).id ??
+      (card as any).card;
+
+    if (!cardId) {
+      setError("Could not determine card id for review card");
+      return;
+    }
+
     try {
-      await apiAnswerReview(token, { cardId: card.cardId, quality });
+      await apiAnswerReview(token, {
+        cardId,
+        quality,
+      });
       await loadNext();
     } catch (e: any) {
       setError(e.message || "Failed to submit answer");
     }
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-  if (done) return <p>No more cards to review 🎉</p>;
-  if (!card) return <p>No card</p>;
+  if (!deckIdStr) {
+    return <p style={{ padding: "2rem" }}>Missing deck id.</p>;
+  }
+
+  if (loading) return <p style={{ padding: "2rem" }}>Loading...</p>;
+
+  if (error)
+    return (
+      <p style={{ padding: "2rem", color: "red" }}>
+        {error}{" "}
+        <button type="button" onClick={loadNext}>
+          Retry
+        </button>
+      </p>
+    );
+
+  if (done)
+    return (
+      <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
+        <button
+          type="button"
+          onClick={() => router.push("/decks")}
+          style={{ marginBottom: "1rem" }}
+        >
+          ← Back to decks
+        </button>
+        <h1>All done 🎉</h1>
+        <p>No more cards to review right now.</p>
+      </main>
+    );
+
+  if (!card) return <p style={{ padding: "2rem" }}>No card.</p>;
 
   return (
     <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
-      <button onClick={() => router.back()}>&larr; Back</button>
-      <h1>Review</h1>
+      <button
+        type="button"
+        onClick={() => router.push(`/decks/${deckIdStr}`)}
+        style={{ marginBottom: "1rem" }}
+      >
+        ← Back to deck
+      </button>
+
+      <h1 style={{ marginBottom: "1rem" }}>Review</h1>
 
       <div
         style={{
-          border: "1px solid #ccc",
-          borderRadius: 8,
+          borderRadius: 12,
           padding: "2rem",
-          marginTop: "1rem",
+          border: "1px solid #ddd",
+          background: "#fff",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+          minHeight: 160,
         }}
       >
-        <p>
+        <p style={{ fontSize: "1.1rem", marginBottom: "1rem" }}>
           <strong>Q:</strong> {card.front}
         </p>
+
         {showBack && (
-          <p style={{ marginTop: "1rem" }}>
+          <p style={{ fontSize: "1rem", color: "#333" }}>
             <strong>A:</strong> {card.back}
           </p>
         )}
       </div>
 
       {!showBack ? (
-        <button style={{ marginTop: "1rem" }} onClick={() => setShowBack(true)}>
+        <button
+          type="button"
+          style={{ marginTop: "1rem" }}
+          onClick={() => setShowBack(true)}
+        >
           Show answer
         </button>
       ) : (
-        <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
-          <button onClick={() => answer(0)}>Again</button>
-          <button onClick={() => answer(1)}>Hard</button>
-          <button onClick={() => answer(2)}>Good</button>
-          <button onClick={() => answer(3)}>Easy</button>
+        <div
+          style={{
+            marginTop: "1rem",
+            display: "flex",
+            gap: "0.5rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <button type="button" onClick={() => answer(0)}>
+            Again
+          </button>
+          <button type="button" onClick={() => answer(1)}>
+            Hard
+          </button>
+          <button type="button" onClick={() => answer(2)}>
+            Good
+          </button>
+          <button type="button" onClick={() => answer(3)}>
+            Easy
+          </button>
         </div>
       )}
     </main>
