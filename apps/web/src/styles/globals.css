@@ -1,0 +1,38 @@
+/* apps/web/src/styles/globals.css */
+
+/* ✅ Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body {
+    @apply p-0 m-0 font-sans bg-slate-950 text-slate-50;
+  }
+
+  a {
+    @apply text-sky-400 hover:underline;
+  }
+
+  button {
+    @apply rounded-full px-3 py-1.5 bg-indigo-500 text-slate-50 font-medium cursor-pointer;
+  }
+
+  button:disabled {
+    @apply opacity-60 cursor-default;
+  }
+
+  input,
+  textarea {
+    @apply font-sans rounded-lg border border-slate-600 bg-slate-900/60 text-slate-50 px-3 py-2 box-border outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500;
+  }
+
+  main {
+    @apply bg-transparent;
+  }
+}

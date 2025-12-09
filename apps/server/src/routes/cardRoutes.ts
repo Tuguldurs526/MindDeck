@@ -1,4 +1,3 @@
-// apps/server/src/routes/cardRoutes.ts
 import { Response, Router } from "express";
 import { Types } from "mongoose";
 
@@ -34,7 +33,6 @@ router.post(
         return res.status(400).json({ error: "Invalid deck id" });
       }
 
-      // just ensure the deck exists; no need to check owner for these tests
       const deck = await Deck.findById(deckId).select("_id");
       if (!deck) {
         return res.status(404).json({ error: "Deck not found" });
@@ -57,11 +55,11 @@ router.post(
 
 /**
  * GET /cards/:deckId
- * Simple list of cards in a deck (used in the CRUD test).
+ * Returns a simple ARRAY of cards.
+ * NOTE: Ensure frontend calls this with the ID directly, not as a query param.
  */
 router.get("/:deckId", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    const userId = getReqUserId(req);
     const { deckId } = req.params;
 
     if (!Types.ObjectId.isValid(deckId)) {
@@ -70,14 +68,12 @@ router.get("/:deckId", verifyToken, async (req: AuthRequest, res: Response) => {
 
     const deck = await Deck.findById(deckId).select("_id");
     if (!deck) {
-      // in the test, after deleting the deck we should return 403 here
       return res.status(403).json({ error: "Deck not accessible" });
     }
 
-    const cards = await Card.find({ deck: deckId, owner: userId }).sort({
-      createdAt: 1,
-    });
+    const cards = await Card.find({ deck: deckId }).sort({ createdAt: 1 });
 
+    // Returns plain array [ {}, {} ]
     return res.json(cards);
   } catch (err: any) {
     console.debug("DEBUG /cards/:deckId GET error:", err);
@@ -87,7 +83,7 @@ router.get("/:deckId", verifyToken, async (req: AuthRequest, res: Response) => {
 
 /**
  * PUT /cards/:id
- * Update a card (only if owned by the current user).
+ * Update a card.
  */
 router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -122,7 +118,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
 
 /**
  * DELETE /cards/:id
- * Delete a card (only if owned by the current user).
+ * Delete a card.
  */
 router.delete("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
@@ -146,8 +142,9 @@ router.delete("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
 });
 
 /**
- * GET /cards?deck=...&limit=...&cursor=...
- * Cursor-based pagination (used in the pagination test).
+ * GET /cards
+ * Query params: ?deck=...&limit=...
+ * Returns an OBJECT { items: [], nextCursor: ... }
  */
 router.get("/", verifyToken, validate(listQuerySchema), async (req: AuthRequest, res: Response) => {
   try {
@@ -158,17 +155,13 @@ router.get("/", verifyToken, validate(listQuerySchema), async (req: AuthRequest,
       return res.status(400).json({ error: "Invalid deck id" });
     }
 
-    // listQuerySchema already validated that limit is 1–50, but it
-    // doesn’t mutate req.query, so we parse again here.
     const limit = Number((req.query as any).limit ?? 10) || 10;
-
     const query: any = { owner: userId, deck };
     if (cursor) {
       query._id = { $gt: cursor };
     }
 
     const items = await Card.find(query).sort({ _id: 1 }).limit(limit);
-
     const nextCursor = items.length === limit ? items[items.length - 1]._id : null;
 
     return res.json({ items, nextCursor });
