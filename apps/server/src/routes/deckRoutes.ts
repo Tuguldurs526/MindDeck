@@ -1,3 +1,4 @@
+//apps/server/src/routes/deckRoutes.ts
 import { Router } from "express";
 import { z } from "zod";
 import { createDeck, deleteDeck, getDeck, listDecks } from "../controllers/deckController.js";
@@ -7,6 +8,7 @@ import { validate } from "../middleware/validate";
 // schemas local to route to avoid “undefined” import headaches
 const createDeckSchema = z.object({
   title: z.string().min(1),
+  source: z.enum(["manual", "ai"]).optional(),
 });
 const idParamSchema = z.object({
   id: z.string().min(1),

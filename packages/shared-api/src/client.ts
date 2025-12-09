@@ -75,6 +75,8 @@ export async function apiRegister(
 export type Deck = {
   _id: string;
   title: string;
+  source?: "manual" | "ai"; // 👈 mark AI decks
+  cardCount?: number; // 👈 number of cards in this deck (if backend sends it)
   createdAt: string;
   updatedAt: string;
 };
@@ -198,9 +200,17 @@ export type ReviewQueueResponse = {
   items: ReviewCard[];
 };
 
-export async function apiGetReviewQueue(token: string, limit = 1) {
+export async function apiGetReviewQueue(
+  token: string,
+  limit = 1,
+  deckId?: string,
+) {
+  const params = new URLSearchParams();
+  params.set("limit", String(limit));
+  if (deckId) params.set("deckId", deckId);
+
   const res = await request<ReviewQueueResponse | ReviewCard[]>(
-    `/reviews/queue?limit=${limit}`,
+    `/reviews/queue?${params.toString()}`,
     { method: "GET" },
     token,
   );
@@ -209,17 +219,12 @@ export async function apiGetReviewQueue(token: string, limit = 1) {
     return { items: res };
   }
 
-  if (res && Array.isArray(res.items)) {
-    return res;
+  if (res && Array.isArray((res as any).items)) {
+    return res as ReviewQueueResponse;
   }
 
   return { items: [] };
 }
-
-export type ReviewAnswerPayload = {
-  cardId: string;
-  quality: 0 | 1 | 2 | 3;
-};
 
 export async function apiAnswerReview(
   token: string,
@@ -227,6 +232,31 @@ export async function apiAnswerReview(
 ) {
   return request<{ nextDue: string }>(
     "/reviews/answer",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
+// ------------ AI flashcard generation ------------
+
+export type AIGeneratedCard = {
+  front: string;
+  back: string;
+};
+
+export type AIGenerateResponse = {
+  cards: AIGeneratedCard[];
+};
+
+export async function apiGenerateCards(
+  token: string,
+  payload: { text: string; numCards?: number },
+) {
+  return request<AIGenerateResponse>(
+    "/ai/generate",
     {
       method: "POST",
       body: JSON.stringify(payload),

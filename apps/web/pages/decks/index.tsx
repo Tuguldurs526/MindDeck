@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiCreateDeck, apiListDecks, type Deck } from "shared-api";
+import { AppLayout } from "../../src/components/AppLayout";
 import { RequireAuth } from "../../src/components/RequireAuth";
 import { useAuth } from "../../src/context/AuthContext";
 
 function DeckListInner() {
-  const { token, user, logout } = useAuth();
+  const { token } = useAuth();
 
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,9 +23,7 @@ function DeckListInner() {
       setError("");
 
       const newDeck = await apiCreateDeck(token, title.trim());
-
-      // append new deck to the list
-      setDecks((prev) => [...prev, newDeck]);
+      setDecks((prev) => [newDeck, ...prev]);
     } catch (e: any) {
       setError(e.message || "Failed to create deck");
     } finally {
@@ -42,7 +41,6 @@ function DeckListInner() {
       setError("");
 
       try {
-        // 👇 apiListDecks already returns Deck[]
         const items = await apiListDecks(token);
         if (!cancelled) {
           setDecks(items);
@@ -66,47 +64,118 @@ function DeckListInner() {
   }, [token]);
 
   return (
-    <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h1>Your Decks</h1>
-        <div>
+    <AppLayout>
+      <main style={{ maxWidth: 720, margin: "2rem auto", padding: "1rem" }}>
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1rem",
+          }}
+        >
+          <div>
+            <h1 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Your decks</h1>
+            <p style={{ fontSize: "0.9rem", color: "#64748b" }}>
+              Review, edit, and create new decks.
+            </p>
+          </div>
           <button
             type="button"
             onClick={handleCreateDeck}
-            style={{ marginRight: "1rem" }}
+            style={{
+              padding: "0.5rem 0.9rem",
+              borderRadius: 999,
+              border: "none",
+              background: "#4f46e5",
+              color: "#fff",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
           >
             + New deck
           </button>
-          <span style={{ marginRight: "1rem" }}>{user?.username}</span>
-          <button type="button" onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </header>
+        </header>
 
-      {loading && <p>Loading decks...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        {loading && <p>Loading decks...</p>}
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {!loading && !error && decks.length === 0 && (
-        <p>No decks yet. Create some via API, mobile, or the button above.</p>
-      )}
+        {!loading && !error && decks.length === 0 && (
+          <p style={{ color: "#64748b", fontSize: "0.9rem" }}>
+            No decks yet. Create one with the button above or generate one from
+            the AI page.
+          </p>
+        )}
 
-      {!loading && !error && decks.length > 0 && (
-        <ul>
-          {decks.map((d) => (
-            <li key={d._id}>
-              <Link href={`/decks/${d._id}`}>{d.title}</Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+        {!loading && !error && decks.length > 0 && (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "grid",
+              gap: "0.6rem",
+            }}
+          >
+            {decks.map((d) => (
+              <li
+                key={d._id}
+                style={{
+                  borderRadius: 10,
+                  border: "1px solid #e5e7eb",
+                  padding: "0.7rem 0.9rem",
+                  background: "#ffffff",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <Link
+                    href={`/decks/${d._id}`}
+                    style={{
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      color: "#111827",
+                    }}
+                  >
+                    {d.title}
+                  </Link>
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#9ca3af",
+                      marginTop: 2,
+                    }}
+                  >
+                    {d.cardCount ?? 0} cards
+                  </div>
+                </div>
+
+                {/* Optional AI pill if source field exists */}
+                {d.source === "ai" && (
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "0.15rem 0.55rem",
+                      borderRadius: 999,
+                      background: "#eef2ff",
+                      color: "#4f46e5",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.04,
+                    }}
+                  >
+                    AI
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </AppLayout>
   );
 }
 

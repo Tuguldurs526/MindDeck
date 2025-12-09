@@ -30,7 +30,7 @@ async function findOwnedDeckOrThrow(id: string, userId: string) {
   }).lean();
 
   if (!deck) {
-    // Don't leak existence vs ownership; 404 is fine for tests
+    // Don't leak existence vs ownership; 404 is fine
     throw new ApiError(404, "NOT_FOUND", "Deck not found");
   }
 
@@ -39,11 +39,14 @@ async function findOwnedDeckOrThrow(id: string, userId: string) {
 
 /**
  * POST /decks
- * Body: { title }
+ * Body: { title, source? }
  */
 export async function createDeck(req: Request, res: Response, next: NextFunction) {
   try {
-    const { title } = (req.body ?? {}) as { title?: string };
+    const { title, source } = (req.body ?? {}) as {
+      title?: string;
+      source?: string;
+    };
 
     const normalizedTitle = title?.trim();
     if (!normalizedTitle) {
@@ -69,6 +72,8 @@ export async function createDeck(req: Request, res: Response, next: NextFunction
       // Set both for backward compatibility with older code/tests
       user: userId,
       owner: userId,
+      // only treat explicit "ai" as AI; everything else/manual/undefined = "manual"
+      source: source === "ai" ? "ai" : "manual",
     });
 
     return res.status(201).json(deck);
@@ -85,14 +90,34 @@ export async function listDecks(req: Request, res: Response, next: NextFunction)
   try {
     const userId = requireUser(req);
 
+    // 1) find all decks of this user
     const decks = await Deck.find({
       $or: [{ user: userId }, { owner: userId }],
-    })
-      .sort({ createdAt: -1, _id: -1 })
-      .lean();
+    }).sort({ createdAt: -1, _id: -1 });
 
-    // Shape not strongly asserted in tests; this is safe & simple
-    return res.json({ items: decks });
+    const deckIds = decks.map((d) => d._id);
+
+    // 2) aggregate card counts per deck
+    const counts = await Card.aggregate([
+      { $match: { deck: { $in: deckIds } } },
+      { $group: { _id: "$deck", count: { $sum: 1 } } },
+    ]);
+
+    const countMap = new Map<string, number>();
+    for (const row of counts) {
+      countMap.set(String(row._id), row.count);
+    }
+
+    // 3) attach cardCount to each deck
+    const items = decks.map((d) => {
+      const obj = d.toObject();
+      return {
+        ...obj,
+        cardCount: countMap.get(String(d._id)) ?? 0,
+      };
+    });
+
+    return res.json({ items });
   } catch (err) {
     return next(err);
   }

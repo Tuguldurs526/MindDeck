@@ -9,10 +9,9 @@ import {
   type Card,
   type Deck,
 } from "shared-api";
+import { AppLayout } from "../../src/components/AppLayout";
 import { RequireAuth } from "../../src/components/RequireAuth";
 import { useAuth } from "../../src/context/AuthContext";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 function DeckDetailInner() {
   const router = useRouter();
@@ -45,47 +44,21 @@ function DeckDetailInner() {
       setError("");
 
       try {
-        console.log("DEBUG Fetching deck with shared-api:", deckId);
-
         const [deckRes, cardsRes] = await Promise.all([
           apiGetDeck(deckId, token),
           apiListCards(token, deckId),
         ]);
 
-        console.log("DEBUG shared-api cardsRes =", cardsRes);
+        if (cancelled) return;
 
-        // 🔥 TEMP: direct fetch bypassing shared-api
-        const directRes = await fetch(`${API_URL}/cards/${deckId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const directJson = await directRes.json();
-        console.log("DEBUG direct /cards response =", directJson);
-
-        if (cancelled) {
-          console.log("DEBUG Request cancelled - ignoring results");
-          return;
-        }
-
-        // For now, force UI to use the direct result:
-        const safeCards = Array.isArray(directJson)
-          ? directJson
-          : Array.isArray(cardsRes)
-            ? cardsRes
-            : [];
-
-        console.log("DEBUG Setting state:", {
-          deck: deckRes?.title,
-          cardCount: safeCards.length,
-        });
+        // apiListCards already returns Card[]
+        const safeCards = Array.isArray(cardsRes) ? cardsRes : [];
 
         setDeck(deckRes);
         setCards(safeCards);
       } catch (e: any) {
         if (!cancelled) {
-          console.error("DEBUG Error loading deck:", e);
+          console.error("Error loading deck:", e);
           setError(e.message || "Failed to load deck");
         }
       } finally {
@@ -265,7 +238,9 @@ function DeckDetailInner() {
 export default function DeckDetailPage() {
   return (
     <RequireAuth>
-      <DeckDetailInner />
+      <AppLayout>
+        <DeckDetailInner />
+      </AppLayout>
     </RequireAuth>
   );
 }
