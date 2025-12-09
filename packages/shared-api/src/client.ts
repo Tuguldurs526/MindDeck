@@ -75,8 +75,8 @@ export async function apiRegister(
 export type Deck = {
   _id: string;
   title: string;
-  source?: "manual" | "ai"; // 👈 mark AI decks
-  cardCount?: number; // 👈 number of cards in this deck (if backend sends it)
+  source?: "manual" | "ai"; // mark AI decks
+  cardCount?: number; // number of cards in this deck (if backend sends it)
   createdAt: string;
   updatedAt: string;
 };
@@ -124,9 +124,10 @@ export type Card = {
   back: string;
   createdAt: string;
   updatedAt: string;
-  // optional, backend sends them but UI doesn't need them yet:
   owner?: string;
   sm2?: any;
+  source?: "manual" | "ai";
+  cardCount?: number;
 };
 
 export async function apiListCards(token: string, deckId: string) {
@@ -184,7 +185,6 @@ export async function apiDeleteCard(token: string, id: string) {
 
 // ------------ Reviews ------------
 
-// Be flexible about what the backend sends (cardId vs _id, etc.)
 export type ReviewCard = {
   cardId?: string;
   _id?: string;
@@ -226,6 +226,11 @@ export async function apiGetReviewQueue(
   return { items: [] };
 }
 
+export type ReviewAnswerPayload = {
+  cardId: string;
+  quality: 0 | 1 | 2 | 3;
+};
+
 export async function apiAnswerReview(
   token: string,
   payload: ReviewAnswerPayload,
@@ -260,6 +265,55 @@ export async function apiGenerateCards(
     {
       method: "POST",
       body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
+/**
+ * Upload PDF/DOCX and generate cards via /ai/upload
+ */
+export async function apiUploadAndGenerateCards(
+  token: string,
+  file: File,
+  numCards = 10,
+) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("numCards", String(numCards));
+
+  const res = await fetch(`${API_URL}/ai/upload`, {
+    method: "POST",
+    headers: {
+      // IMPORTANT: do NOT set Content-Type manually here,
+      // the browser will add the correct multipart boundary.
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  });
+
+  if (!res.ok) {
+    let msg = res.statusText;
+    try {
+      const body = (await res.json()) as any;
+      if (body && typeof body.error === "string") {
+        msg = body.error;
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(msg || "Upload request failed");
+  }
+
+  return (await res.json()) as AIGenerateResponse;
+}
+
+export async function apiResetDeckReviews(token: string, deckId: string) {
+  return request<{ reset: boolean; matched: number; modified: number }>(
+    "/reviews/reset-deck",
+    {
+      method: "POST",
+      body: JSON.stringify({ deckId }),
     },
     token,
   );

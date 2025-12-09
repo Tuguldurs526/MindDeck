@@ -1,8 +1,10 @@
+// apps/web/pages/ai.tsx
 import { FormEvent, useState } from "react";
 import {
   apiCreateCard,
   apiCreateDeck,
   apiGenerateCards,
+  apiUploadAndGenerateCards,
   type AIGeneratedCard,
 } from "shared-api";
 import { AppLayout } from "../src/components/AppLayout";
@@ -11,59 +13,76 @@ import { useAuth } from "../src/context/AuthContext";
 
 function AIGeneratorInner() {
   const { token } = useAuth();
-  const [text, setText] = useState("");
-  const [cards, setCards] = useState<AIGeneratedCard[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [deckTitle, setDeckTitle] = useState("");
 
-  const hasCards = cards.length > 0;
+  const [text, setText] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [numCards, setNumCards] = useState(10);
+
+  const [generated, setGenerated] = useState<AIGeneratedCard[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [deckTitle, setDeckTitle] = useState("AI deck");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const canGenerate =
+    !!token && ((text.trim().length >= 20 && !file) || !!file);
 
   const onGenerate = async (e: FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    if (text.trim().length < 20) {
-      setError("Please paste at least a few sentences.");
-      return;
-    }
 
-    setLoading(true);
     setError("");
-    setCards([]);
+    setSaveMessage("");
+    setGenerated([]);
+    setLoading(true);
 
     try {
-      const res = await apiGenerateCards(token, {
-        text: text.trim(),
-        numCards: 10,
-      });
-
-      setCards(res.cards || []);
-      if (!deckTitle) {
-        setDeckTitle("AI deck – " + (text.slice(0, 40) + "..."));
+      let res;
+      if (file) {
+        // PDF/DOCX path
+        res = await apiUploadAndGenerateCards(token, file, numCards);
+      } else {
+        // Text path
+        res = await apiGenerateCards(token, {
+          text: text.trim(),
+          numCards,
+        });
       }
-    } catch (e: any) {
-      setError(e.message || "Failed to generate cards");
+
+      const cards = Array.isArray(res.cards) ? res.cards : [];
+      if (!cards.length) {
+        setError("AI did not return any cards. Try a different input.");
+      }
+      setGenerated(cards);
+    } catch (err: any) {
+      setError(err.message || "Failed to generate cards");
     } finally {
       setLoading(false);
     }
   };
 
   const onRemoveCard = (index: number) => {
-    setCards((prev) => prev.filter((_, i) => i !== index));
+    setGenerated((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const onSaveDeck = async () => {
-    if (!token || !hasCards) return;
+  const onSaveToDeck = async () => {
+    if (!token) return;
+    if (!generated.length) {
+      setError("No cards to save.");
+      return;
+    }
+
     setSaving(true);
     setError("");
+    setSaveMessage("");
 
     try {
-      const title = deckTitle.trim() || "AI generated deck";
+      const title = deckTitle.trim() || "AI deck";
       const deck = await apiCreateDeck(token, title);
 
-      // naive: create cards one by one
-      for (const c of cards) {
+      for (const c of generated) {
         await apiCreateCard(token, {
           deckId: deck._id,
           front: c.front,
@@ -71,217 +90,348 @@ function AIGeneratorInner() {
         });
       }
 
-      alert("Deck saved! You can find it in My decks.");
-      setCards([]);
-      setText("");
-    } catch (e: any) {
-      setError(e.message || "Failed to save deck");
+      setSaveMessage(
+        `Saved ${generated.length} cards to deck "${deck.title}".`,
+      );
+    } catch (err: any) {
+      setError(err.message || "Failed to save cards to deck");
     } finally {
       setSaving(false);
     }
   };
 
-  return (
-    <div>
-      {/* Hero heading similar vibe to examples */}
-      <section style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "2.4rem", marginBottom: "0.5rem" }}>
-          Turn your notes into flashcards in seconds
-        </h1>
-        <p style={{ color: "#555" }}>
-          Paste your text or upload your slides, let AI create study-ready
-          flashcards for you.
-        </p>
-      </section>
+  const cardsCount = generated.length;
 
-      <section
+  return (
+    <AppLayout>
+      <main
         style={{
           display: "grid",
-          gridTemplateColumns: "1.1fr 0.9fr",
+          gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1.1fr)",
           gap: "1.5rem",
           alignItems: "flex-start",
         }}
       >
-        {/* Left: input */}
-        <div
-          style={{
-            borderRadius: 24,
-            padding: "1.5rem",
-            background: "#ffffff",
-            boxShadow: "0 18px 40px rgba(15, 23, 42, 0.06)",
-          }}
-        >
+        {/* Left: input (text + file) */}
+        <section>
+          <h1
+            style={{
+              fontSize: "1.8rem",
+              marginBottom: "0.5rem",
+            }}
+          >
+            AI flashcard generator
+          </h1>
+          <p
+            style={{
+              fontSize: "0.95rem",
+              color: "#64748b",
+              marginBottom: "1rem",
+            }}
+          >
+            Paste your notes or upload a PDF / DOCX. We&apos;ll generate
+            flashcards that you can edit and save into a deck.
+          </p>
+
           <form onSubmit={onGenerate}>
-            <label style={{ display: "block", marginBottom: "0.75rem" }}>
-              <span style={{ fontWeight: 600, display: "block" }}>
-                Paste your study material
-              </span>
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={8}
-                placeholder="Lecture notes, textbook paragraphs, bullet points..."
-                style={{
-                  width: "100%",
-                  marginTop: "0.5rem",
-                  borderRadius: 16,
-                  border: "1px solid #d5d7e5",
-                  padding: "0.75rem 1rem",
-                  resize: "vertical",
-                }}
-              />
-            </label>
-
-            {/* Simple file input placeholder (you can wire it later) */}
-            <div
-              style={{
-                border: "1px dashed #c0c2dd",
-                borderRadius: 16,
-                padding: "0.75rem 1rem",
-                marginBottom: "1rem",
-                background: "#fafbff",
-                fontSize: "0.9rem",
-              }}
-            >
-              <p style={{ marginBottom: "0.5rem" }}>
-                <strong>Optional:</strong> Upload a PDF (not wired yet, text
-                paste works for the demo).
-              </p>
-              <input type="file" disabled />
-            </div>
-
             <label
               style={{
                 display: "block",
                 marginBottom: "0.75rem",
-                fontSize: "0.9rem",
+                fontSize: "0.85rem",
+                color: "#475569",
               }}
             >
-              Deck title (for saving)
-              <input
-                type="text"
-                value={deckTitle}
-                onChange={(e) => setDeckTitle(e.target.value)}
-                placeholder="AI deck – Biology Chapter 3"
+              Study text
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={8}
+                placeholder="Paste your lecture notes, summary, or textbook paragraphs..."
                 style={{
                   width: "100%",
-                  marginTop: "0.25rem",
+                  marginTop: "0.35rem",
+                  borderRadius: 10,
+                  border: "1px solid #cbd5f5",
+                  padding: "0.6rem 0.7rem",
+                  fontSize: "0.9rem",
+                  resize: "vertical",
+                  backgroundColor: file ? "#f9fafb" : "#ffffff",
+                }}
+                disabled={!!file}
+              />
+            </label>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+                marginBottom: "0.75rem",
+              }}
+            >
+              <div style={{ fontSize: "0.85rem", color: "#475569" }}>
+                Or upload a file (PDF / DOCX)
+              </div>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              {file && (
+                <p style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                  Selected: <strong>{file.name}</strong>{" "}
+                  <button
+                    type="button"
+                    onClick={() => setFile(null)}
+                    style={{
+                      marginLeft: "0.5rem",
+                      border: "none",
+                      background: "transparent",
+                      color: "#ef4444",
+                      cursor: "pointer",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    Clear file
+                  </button>
+                </p>
+              )}
+            </div>
+
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginBottom: "0.9rem",
+                fontSize: "0.85rem",
+                color: "#475569",
+              }}
+            >
+              Number of cards
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={numCards}
+                onChange={(e) =>
+                  setNumCards(
+                    Math.min(30, Math.max(1, Number(e.target.value) || 1)),
+                  )
+                }
+                style={{
+                  width: 70,
                   borderRadius: 999,
-                  border: "1px solid #d5d7e5",
-                  padding: "0.5rem 0.9rem",
+                  border: "1px solid #cbd5f5",
+                  padding: "0.2rem 0.5rem",
+                  fontSize: "0.9rem",
                 }}
               />
             </label>
 
             {error && (
-              <p style={{ color: "red", marginBottom: "0.75rem" }}>{error}</p>
+              <p
+                style={{
+                  color: "red",
+                  fontSize: "0.85rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {error}
+              </p>
             )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={!canGenerate || loading}
               style={{
-                width: "100%",
                 borderRadius: 999,
+                padding: "0.6rem 1.4rem",
                 border: "none",
-                padding: "0.9rem",
-                fontSize: "1rem",
+                background: !canGenerate
+                  ? "rgba(148,163,184,0.5)"
+                  : "linear-gradient(135deg, #4f46e5, #6366f1)",
+                color: "#ffffff",
                 fontWeight: 600,
-                background: "#4f46e5",
-                color: "#fff",
-                cursor: "pointer",
-                opacity: loading ? 0.7 : 1,
+                cursor: !canGenerate || loading ? "default" : "pointer",
               }}
             >
-              {loading ? "Generating flashcards..." : "Generate flashcards"}
+              {loading ? "Generating..." : "Generate flashcards"}
             </button>
           </form>
-        </div>
+        </section>
 
-        {/* Right: generated cards */}
-        <div>
-          <h2 style={{ marginBottom: "0.75rem" }}>Preview cards</h2>
-          {!hasCards && !loading && (
-            <p style={{ color: "#777", fontSize: "0.95rem" }}>
-              Generated cards will appear here. You can remove any before saving
-              them as a deck.
+        {/* Right: generated cards + save */}
+        <section>
+          <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+            Generated cards {cardsCount ? `(${cardsCount})` : ""}
+          </h2>
+
+          {loading && (
+            <p
+              style={{
+                fontSize: "0.9rem",
+                color: "#64748b",
+                marginBottom: "0.75rem",
+              }}
+            >
+              Thinking… building cards from your content.
             </p>
           )}
 
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-          >
-            {cards.map((card, idx) => (
+          {!loading && !cardsCount && (
+            <p style={{ fontSize: "0.9rem", color: "#94a3b8" }}>
+              Cards will appear here after you generate them. You can remove any
+              you don&apos;t like before saving to a deck.
+            </p>
+          )}
+
+          {cardsCount > 0 && (
+            <>
               <div
-                key={idx}
                 style={{
-                  borderRadius: 16,
-                  padding: "0.9rem 1rem",
-                  background: "#ffffff",
-                  border: "1px solid #e0e3f0",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.25rem",
+                  maxHeight: 360,
+                  overflowY: "auto",
+                  marginBottom: "0.75rem",
                 }}
               >
-                <div style={{ fontWeight: 600 }}>{card.front}</div>
-                <div style={{ fontSize: "0.9rem", color: "#444" }}>
-                  {card.back}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveCard(idx)}
+                {generated.map((c, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      borderRadius: 12,
+                      border: "1px solid #e2e8f0",
+                      padding: "0.85rem 1rem",
+                      marginBottom: "0.5rem",
+                      background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(241,245,249,0.98))",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "#94a3b8",
+                        marginBottom: "0.25rem",
+                      }}
+                    >
+                      Card {i + 1}
+                    </div>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        marginBottom: "0.25rem",
+                      }}
+                    >
+                      Q: {c.front}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.9rem",
+                        color: "#475569",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      A: {c.back}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveCard(i)}
+                      style={{
+                        marginTop: "0.4rem",
+                        fontSize: "0.8rem",
+                        borderRadius: 999,
+                        border: "none",
+                        padding: "0.25rem 0.7rem",
+                        background: "rgba(248,113,113,0.12)",
+                        color: "#b91c1c",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  borderRadius: 12,
+                  border: "1px solid #e2e8f0",
+                  padding: "0.85rem 1rem",
+                  background: "#ffffff",
+                }}
+              >
+                <label
                   style={{
-                    alignSelf: "flex-start",
-                    marginTop: "0.35rem",
-                    borderRadius: 999,
-                    border: "none",
-                    padding: "0.25rem 0.7rem",
-                    fontSize: "0.8rem",
-                    background: "#fee2e2",
-                    color: "#b91c1c",
-                    cursor: "pointer",
+                    display: "block",
+                    marginBottom: "0.6rem",
+                    fontSize: "0.85rem",
+                    color: "#475569",
                   }}
                 >
-                  Remove
+                  Save to deck as
+                  <input
+                    type="text"
+                    value={deckTitle}
+                    onChange={(e) => setDeckTitle(e.target.value)}
+                    style={{
+                      width: "100%",
+                      marginTop: "0.25rem",
+                      borderRadius: 999,
+                      border: "1px solid #cbd5f5",
+                      padding: "0.4rem 0.7rem",
+                      fontSize: "0.9rem",
+                    }}
+                    placeholder="AI deck"
+                  />
+                </label>
+
+                {saveMessage && (
+                  <p
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#16a34a",
+                      marginBottom: "0.4rem",
+                    }}
+                  >
+                    {saveMessage}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  disabled={saving || !cardsCount}
+                  onClick={onSaveToDeck}
+                  style={{
+                    borderRadius: 999,
+                    padding: "0.5rem 1.4rem",
+                    border: "none",
+                    background: saving
+                      ? "rgba(148,163,184,0.7)"
+                      : "linear-gradient(135deg, #22c55e, #4ade80)",
+                    color: "#ffffff",
+                    fontWeight: 600,
+                    cursor: saving ? "default" : "pointer",
+                  }}
+                >
+                  {saving
+                    ? "Saving..."
+                    : `Save ${cardsCount} card${cardsCount === 1 ? "" : "s"} to deck`}
                 </button>
               </div>
-            ))}
-          </div>
-
-          {hasCards && (
-            <button
-              type="button"
-              onClick={onSaveDeck}
-              disabled={saving}
-              style={{
-                marginTop: "1rem",
-                width: "100%",
-                borderRadius: 999,
-                border: "none",
-                padding: "0.8rem",
-                fontWeight: 600,
-                background: "#16a34a",
-                color: "#fff",
-                cursor: "pointer",
-                opacity: saving ? 0.7 : 1,
-              }}
-            >
-              {saving ? "Saving deck..." : `Save ${cards.length} cards to deck`}
-            </button>
+            </>
           )}
-        </div>
-      </section>
-    </div>
+        </section>
+      </main>
+    </AppLayout>
   );
 }
 
 export default function AIGeneratorPage() {
   return (
     <RequireAuth>
-      <AppLayout>
-        <AIGeneratorInner />
-      </AppLayout>
+      <AIGeneratorInner />
     </RequireAuth>
   );
 }

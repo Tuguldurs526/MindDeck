@@ -51,7 +51,6 @@ function DeckDetailInner() {
 
         if (cancelled) return;
 
-        // apiListCards already returns Card[]
         const safeCards = Array.isArray(cardsRes) ? cardsRes : [];
 
         setDeck(deckRes);
@@ -122,61 +121,145 @@ function DeckDetailInner() {
   if (!deck) return <p style={{ padding: "2rem" }}>Deck not found.</p>;
 
   const cardCount = cards.length;
+  const isAIDeck = deck.source === "ai";
 
   return (
-    <main style={{ maxWidth: 720, margin: "2rem auto", padding: "1rem" }}>
+    <main
+      style={{
+        maxWidth: 960,
+        margin: "2rem auto",
+        padding: "1rem",
+      }}
+    >
       <button
         type="button"
         onClick={() => router.push("/decks")}
-        style={{ marginBottom: "1rem" }}
+        style={{
+          marginBottom: "1rem",
+          padding: "0.4rem 0.9rem",
+          borderRadius: 999,
+          border: "1px solid rgba(148,163,184,0.6)",
+          background: "rgba(255,255,255,0.9)",
+          color: "#0f172a",
+          fontSize: "0.9rem",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "0.3rem",
+          cursor: "pointer",
+        }}
       >
-        ← Back to decks
+        <span>←</span>
+        <span>Back to decks</span>
       </button>
 
-      <h1 style={{ fontSize: "1.8rem", marginBottom: "0.25rem" }}>
-        {deck.title}
-      </h1>
-      <p style={{ marginBottom: "0.75rem", color: "#666" }}>
-        {cardCount} card{cardCount === 1 ? "" : "s"}
-      </p>
-
-      <button
-        type="button"
-        style={{ marginBottom: "1.5rem" }}
-        onClick={() => router.push(`/review/${deck._id}`)}
-        disabled={cardCount === 0}
+      <header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem",
+          marginBottom: "0.75rem",
+        }}
       >
-        Start review
-      </button>
+        <div>
+          <h1
+            style={{
+              fontSize: "1.9rem",
+              marginBottom: "0.35rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            {deck.title}
+            {isAIDeck && (
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  padding: "0.15rem 0.6rem",
+                  borderRadius: 999,
+                  background:
+                    "linear-gradient(135deg, rgba(79,70,229,0.08), rgba(56,189,248,0.16))",
+                  border: "1px solid rgba(129,140,248,0.6)",
+                  color: "#4f46e5",
+                  fontWeight: 600,
+                }}
+              >
+                AI deck
+              </span>
+            )}
+          </h1>
+          <p style={{ marginBottom: 0, color: "#64748b", fontSize: "0.95rem" }}>
+            {cardCount} card{cardCount === 1 ? "" : "s"}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          style={{
+            marginBottom: "0.25rem",
+            borderRadius: 999,
+            padding: "0.5rem 1.2rem",
+            border: "none",
+            background:
+              cardCount === 0
+                ? "rgba(148,163,184,0.3)"
+                : "linear-gradient(135deg, #4f46e5, #6366f1)",
+            color: cardCount === 0 ? "#475569" : "#ffffff",
+            fontWeight: 600,
+            cursor: cardCount === 0 ? "default" : "pointer",
+            boxShadow:
+              cardCount === 0 ? "none" : "0 14px 30px rgba(79,70,229,0.35)",
+          }}
+          onClick={() => {
+            if (cardCount > 0) router.push(`/review/${deck._id}`);
+          }}
+          disabled={cardCount === 0}
+        >
+          {cardCount === 0 ? "Add cards to start review" : "Start review"}
+        </button>
+      </header>
 
       <section
         style={{
           display: "grid",
-          gridTemplateColumns: "1.2fr 1fr",
+          gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)",
           gap: "1.5rem",
           alignItems: "flex-start",
         }}
       >
         {/* Cards list */}
         <div>
-          <h2 style={{ marginBottom: "0.5rem" }}>Cards</h2>
+          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>Cards</h2>
           {cardCount === 0 ? (
-            <p style={{ color: "#777" }}>No cards yet. Add your first one ➜</p>
+            <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>
+              No cards yet. Add your first one on the right →
+            </p>
           ) : (
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {cards.map((card) => (
                 <li
                   key={card._id}
                   style={{
-                    border: "1px solid #ddd",
-                    borderRadius: 8,
-                    padding: "0.75rem 1rem",
-                    marginBottom: "0.5rem",
-                    background: "#fff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 12,
+                    padding: "0.9rem 1rem",
+                    marginBottom: "0.6rem",
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,252,0.95))",
+                    boxShadow: "0 6px 16px rgba(15,23,42,0.05)",
                   }}
                 >
-                  <div style={{ fontWeight: 600 }}>{card.front}</div>
-                  <div style={{ fontSize: "0.9rem", color: "#555" }}>
+                  <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
+                    {card.front}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.9rem",
+                      color: "#475569",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
                     {card.back}
                   </div>
                   <button
@@ -185,7 +268,12 @@ function DeckDetailInner() {
                     style={{
                       marginTop: "0.5rem",
                       fontSize: "0.8rem",
-                      background: "#fbe9e9",
+                      borderRadius: 999,
+                      border: "none",
+                      padding: "0.25rem 0.7rem",
+                      background: "rgba(248,113,113,0.12)",
+                      color: "#b91c1c",
+                      cursor: "pointer",
                     }}
                   >
                     Delete
@@ -199,33 +287,92 @@ function DeckDetailInner() {
         {/* New card form */}
         <div
           style={{
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            padding: "1rem",
-            background: "#fff",
+            border: "1px solid #e2e8f0",
+            borderRadius: 16,
+            padding: "1.1rem",
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,0.92), rgba(241,245,249,0.96))",
+            boxShadow: "0 10px 28px rgba(15,23,42,0.08)",
           }}
         >
-          <h2 style={{ marginBottom: "0.5rem" }}>Add card</h2>
+          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>
+            Add card
+          </h2>
           <form onSubmit={onCreateCard}>
-            <label style={{ display: "block", marginBottom: "0.5rem" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.6rem",
+                fontSize: "0.85rem",
+                color: "#475569",
+              }}
+            >
               Front
               <textarea
                 value={front}
                 onChange={(e) => setFront(e.target.value)}
                 rows={3}
-                style={{ width: "100%", marginTop: "0.25rem" }}
+                style={{
+                  width: "100%",
+                  marginTop: "0.25rem",
+                  borderRadius: 8,
+                  border: "1px solid #cbd5f5",
+                  padding: "0.45rem 0.6rem",
+                  fontSize: "0.9rem",
+                  resize: "vertical",
+                }}
               />
             </label>
-            <label style={{ display: "block", marginBottom: "0.75rem" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.9rem",
+                fontSize: "0.85rem",
+                color: "#475569",
+              }}
+            >
               Back
               <textarea
                 value={back}
                 onChange={(e) => setBack(e.target.value)}
                 rows={3}
-                style={{ width: "100%", marginTop: "0.25rem" }}
+                style={{
+                  width: "100%",
+                  marginTop: "0.25rem",
+                  borderRadius: 8,
+                  border: "1px solid #cbd5f5",
+                  padding: "0.45rem 0.6rem",
+                  fontSize: "0.9rem",
+                  resize: "vertical",
+                }}
               />
             </label>
-            <button type="submit" disabled={saving}>
+            {error && (
+              <p
+                style={{
+                  color: "red",
+                  fontSize: "0.8rem",
+                  marginBottom: "0.4rem",
+                }}
+              >
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={saving}
+              style={{
+                borderRadius: 999,
+                padding: "0.5rem 1.2rem",
+                border: "none",
+                background: saving
+                  ? "rgba(148,163,184,0.7)"
+                  : "linear-gradient(135deg, #22c55e, #4ade80)",
+                color: "#ffffff",
+                fontWeight: 600,
+                cursor: saving ? "default" : "pointer",
+              }}
+            >
               {saving ? "Saving..." : "Add card"}
             </button>
           </form>

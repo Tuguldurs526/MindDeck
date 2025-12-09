@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   apiAnswerReview,
   apiGetReviewQueue,
+  apiResetDeckReviews,
   type ReviewCard,
 } from "shared-api";
 import { RequireAuth } from "../../src/components/RequireAuth";
@@ -19,25 +20,27 @@ function ReviewInner() {
   const [loading, setLoading] = useState(true);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [resetting, setResetting] = useState(false);
 
+  // normalize deck id
   const deckIdStr = typeof deckId === "string" ? deckId : "";
 
   const loadNext = async () => {
-    if (!token) return;
+    if (!token || !deckIdStr) return;
 
     setLoading(true);
     setError("");
     setShowBack(false);
 
     try {
-      // queue is global on the server; we just ask for 1 card
-      const res = await apiGetReviewQueue(token, 1);
+      const res = await apiGetReviewQueue(token, 1, deckIdStr);
       const next = res.items[0];
 
       if (!next) {
         setDone(true);
         setCard(null);
       } else {
+        setDone(false);
         setCard(next);
       }
     } catch (e: any) {
@@ -48,15 +51,14 @@ function ReviewInner() {
   };
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !deckIdStr) return;
     loadNext();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, deckIdStr]);
 
   const answer = async (quality: 0 | 1 | 2 | 3) => {
     if (!token || !card) return;
 
-    // Be very defensive about which field contains the card id
     const cardId =
       (card as any).cardId ??
       (card as any)._id ??
@@ -79,6 +81,21 @@ function ReviewInner() {
     }
   };
 
+  const onResetDeck = async () => {
+    if (!token || !deckIdStr) return;
+    setError("");
+    setResetting(true);
+    try {
+      await apiResetDeckReviews(token, deckIdStr);
+      setDone(false);
+      await loadNext();
+    } catch (e: any) {
+      setError(e.message || "Failed to reset deck reviews");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (!deckIdStr) {
     return <p style={{ padding: "2rem" }}>Missing deck id.</p>;
   }
@@ -87,12 +104,25 @@ function ReviewInner() {
 
   if (error)
     return (
-      <p style={{ padding: "2rem", color: "red" }}>
-        {error}{" "}
+      <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
+        <button
+          type="button"
+          onClick={() => router.push(`/decks/${deckIdStr}`)}
+          style={{
+            marginBottom: "1rem",
+            color: "#111827",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          ← Back to deck
+        </button>
+        <p style={{ color: "red", marginBottom: "1rem" }}>{error}</p>
         <button type="button" onClick={loadNext}>
           Retry
         </button>
-      </p>
+      </main>
     );
 
   if (done)
@@ -100,13 +130,33 @@ function ReviewInner() {
       <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
         <button
           type="button"
-          onClick={() => router.push("/decks")}
-          style={{ marginBottom: "1rem" }}
+          onClick={() => router.push(`/decks/${deckIdStr}`)}
+          style={{
+            marginBottom: "1rem",
+            color: "#111827",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+          }}
         >
-          ← Back to decks
+          ← Back to deck
         </button>
         <h1>All done 🎉</h1>
-        <p>No more cards to review right now.</p>
+        <p>No more cards to review in this deck right now.</p>
+        <button
+          type="button"
+          onClick={onResetDeck}
+          disabled={resetting}
+          style={{
+            marginTop: "1rem",
+            padding: "0.6rem 1.2rem",
+            borderRadius: 999,
+            border: "1px solid #e5e7eb",
+            background: "#f3f4f6",
+          }}
+        >
+          {resetting ? "Resetting..." : "Review this deck again now"}
+        </button>
       </main>
     );
 
@@ -117,7 +167,13 @@ function ReviewInner() {
       <button
         type="button"
         onClick={() => router.push(`/decks/${deckIdStr}`)}
-        style={{ marginBottom: "1rem" }}
+        style={{
+          marginBottom: "1rem",
+          color: "#111827",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+        }}
       >
         ← Back to deck
       </button>

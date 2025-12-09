@@ -1,3 +1,4 @@
+// apps/web/pages/login.tsx
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FormEvent, useEffect, useState } from "react";
@@ -6,21 +7,18 @@ import { useAuth } from "../src/context/AuthContext";
 export default function LoginPage() {
   const { login, loading, user } = useAuth();
   const router = useRouter();
+
   const [email, setEmail] = useState("tugo@test.com");
   const [password, setPassword] = useState("Passw0rd!");
   const [error, setError] = useState("");
 
-  // If already logged in, send user to /decks
   useEffect(() => {
-    if (user) {
-      router.replace("/decks");
-    }
+    if (user) router.replace("/decks");
   }, [user, router]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-
     try {
       await login(email, password);
       router.push("/decks");
@@ -30,49 +28,160 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={{ maxWidth: 400, margin: "4rem auto", padding: "1rem" }}>
-      <h1>Minddeck Login</h1>
+    <div
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at top left, #a5b4fc 0, #e0f2fe 30%, #f5f3ff 70%, #f9fafb 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "2rem 1rem",
+        fontFamily:
+          "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          borderRadius: 28,
+          padding: "2rem 2.25rem",
+          background: "rgba(255,255,255,0.9)",
+          boxShadow: "0 24px 60px rgba(15,23,42,0.18)",
+          border: "1px solid rgba(148,163,184,0.4)",
+          backdropFilter: "blur(16px)",
+        }}
+      >
+        <header
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "999px",
+                background:
+                  "conic-gradient(from 180deg at 50% 50%, #4f46e5, #06b6d4, #a855f7, #4f46e5)",
+              }}
+            />
+            <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>
+              Minddeck
+            </span>
+          </div>
+          <Link
+            href="/"
+            style={{
+              fontSize: "0.8rem",
+              color: "#6b7280",
+              textDecoration: "none",
+            }}
+          >
+            ← Home
+          </Link>
+        </header>
 
-      <form onSubmit={onSubmit}>
-        <label style={{ display: "block", marginBottom: "0.75rem" }}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: "100%", marginTop: 4 }}
-          />
-        </label>
+        <h1
+          style={{
+            fontSize: "1.6rem",
+            fontWeight: 700,
+            marginBottom: "0.4rem",
+            color: "#0f172a",
+          }}
+        >
+          Welcome back
+        </h1>
+        <p
+          style={{
+            fontSize: "0.9rem",
+            color: "#6b7280",
+            marginBottom: "1.5rem",
+          }}
+        >
+          Log in to access your decks and keep your streak going.
+        </p>
 
-        <label style={{ display: "block", marginBottom: "0.75rem" }}>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: "100%", marginTop: 4 }}
-          />
-        </label>
+        <form onSubmit={onSubmit} style={{ display: "grid", gap: "0.9rem" }}>
+          <label style={{ fontSize: "0.85rem", color: "#4b5563" }}>
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                marginTop: "0.2rem",
+                padding: "0.6rem 0.7rem",
+                borderRadius: 10,
+                border: "1px solid rgba(148,163,184,0.8)",
+                background: "rgba(248,250,252,0.9)",
+              }}
+            />
+          </label>
 
-        {error && (
-          <p style={{ color: "red", marginBottom: "0.5rem" }}>{error}</p>
-        )}
+          <label style={{ fontSize: "0.85rem", color: "#4b5563" }}>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                marginTop: "0.2rem",
+                padding: "0.6rem 0.7rem",
+                borderRadius: 10,
+                border: "1px solid rgba(148,163,184,0.8)",
+                background: "rgba(248,250,252,0.9)",
+              }}
+            />
+          </label>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+          {error && (
+            <p style={{ color: "#dc2626", fontSize: "0.85rem" }}>{error}</p>
+          )}
 
-      <p style={{ marginTop: "1rem" }}>
-        No account yet? <Link href="/register">Create one</Link>
-      </p>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              marginTop: "0.4rem",
+              padding: "0.7rem 1rem",
+              borderRadius: 999,
+              border: "none",
+              background:
+                "linear-gradient(135deg, #4f46e5 0%, #a855f7 50%, #22c55e 100%)",
+              color: "white",
+              fontWeight: 600,
+              cursor: "pointer",
+              boxShadow: "0 22px 45px rgba(79,70,229,0.45)",
+              opacity: loading ? 0.8 : 1,
+            }}
+          >
+            {loading ? "Logging in..." : "Log in"}
+          </button>
+        </form>
 
-      <p style={{ marginTop: "1rem", fontSize: "0.85rem" }}>
-        You can reuse the same credentials as the backend smoke test:{" "}
-        <code>tugo@test.com / Passw0rd!</code>
-      </p>
-    </main>
+        <p
+          style={{
+            marginTop: "1rem",
+            fontSize: "0.85rem",
+            color: "#6b7280",
+          }}
+        >
+          No account yet?{" "}
+          <Link href="/register" style={{ color: "#4f46e5" }}>
+            Create one
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }
