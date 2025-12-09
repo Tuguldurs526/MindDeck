@@ -152,7 +152,8 @@ function ReviewInner() {
             padding: "0.6rem 1.2rem",
             borderRadius: 999,
             border: "1px solid #e5e7eb",
-            background: "#f3f4f6",
+            background:
+              "linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #22c55e 100%)",
           }}
         >
           {resetting ? "Resetting..." : "Review this deck again now"}
@@ -166,16 +167,19 @@ function ReviewInner() {
     <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
       <button
         type="button"
-        onClick={() => router.push(`/decks/${deckIdStr}`)}
+        onClick={() => router.push("/decks")}
         style={{
           marginBottom: "1rem",
+          padding: "0.35rem 0.85rem",
+          borderRadius: 999,
+          border: "1px solid #e5e7eb",
+          backgroundColor: "#f9fafb",
           color: "#111827",
-          background: "transparent",
-          border: "none",
           cursor: "pointer",
+          fontSize: "0.85rem",
         }}
       >
-        ← Back to deck
+        ← Back to decks
       </button>
 
       <h1 style={{ marginBottom: "1rem" }}>Review</h1>

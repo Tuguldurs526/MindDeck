@@ -164,7 +164,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   borderRadius: 999,
                   padding: "0.3rem 0.9rem",
                   border: "1px solid rgba(148,163,184,0.5)",
-                  backgroundColor: "rgba(255,255,255,0.9)",
+                  background:
+                    "linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #22c55e 100%)",
+
                   fontSize: "0.8rem",
                   cursor: "pointer",
                 }}

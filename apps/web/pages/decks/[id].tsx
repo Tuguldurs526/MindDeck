@@ -129,6 +129,7 @@ function DeckDetailInner() {
         maxWidth: 960,
         margin: "2rem auto",
         padding: "1rem",
+        color: "#0f172a", // ensure dark text by default
       }}
     >
       <button
@@ -169,6 +170,7 @@ function DeckDetailInner() {
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
+              color: "#0f172a", // title clearly visible
             }}
           >
             {deck.title}
@@ -189,7 +191,13 @@ function DeckDetailInner() {
               </span>
             )}
           </h1>
-          <p style={{ marginBottom: 0, color: "#64748b", fontSize: "0.95rem" }}>
+          <p
+            style={{
+              marginBottom: 0,
+              color: "#64748b",
+              fontSize: "0.95rem",
+            }}
+          >
             {cardCount} card{cardCount === 1 ? "" : "s"}
           </p>
         </div>
@@ -230,7 +238,15 @@ function DeckDetailInner() {
       >
         {/* Cards list */}
         <div>
-          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>Cards</h2>
+          <h2
+            style={{
+              marginBottom: "0.5rem",
+              fontSize: "1.05rem",
+              color: "#0f172a",
+            }}
+          >
+            Cards
+          </h2>
           {cardCount === 0 ? (
             <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>
               No cards yet. Add your first one on the right →
@@ -250,7 +266,13 @@ function DeckDetailInner() {
                     boxShadow: "0 6px 16px rgba(15,23,42,0.05)",
                   }}
                 >
-                  <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      marginBottom: "0.25rem",
+                      color: "#0f172a", // front/question text visible
+                    }}
+                  >
                     {card.front}
                   </div>
                   <div
@@ -295,7 +317,13 @@ function DeckDetailInner() {
             boxShadow: "0 10px 28px rgba(15,23,42,0.08)",
           }}
         >
-          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>
+          <h2
+            style={{
+              marginBottom: "0.5rem",
+              fontSize: "1.05rem",
+              color: "#0f172a",
+            }}
+          >
             Add card
           </h2>
           <form onSubmit={onCreateCard}>
@@ -320,6 +348,8 @@ function DeckDetailInner() {
                   padding: "0.45rem 0.6rem",
                   fontSize: "0.9rem",
                   resize: "vertical",
+                  color: "#0f172a",
+                  backgroundColor: "rgba(255,255,255,0.95)",
                 }}
               />
             </label>
@@ -344,6 +374,8 @@ function DeckDetailInner() {
                   padding: "0.45rem 0.6rem",
                   fontSize: "0.9rem",
                   resize: "vertical",
+                  color: "#0f172a",
+                  backgroundColor: "rgba(255,255,255,0.95)",
                 }}
               />
             </label>

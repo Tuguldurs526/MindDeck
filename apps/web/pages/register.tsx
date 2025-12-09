@@ -2,208 +2,116 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FormEvent, useEffect, useState } from "react";
-import { apiRegister } from "shared-api";
+import { Button } from "../src/components/ui/Button";
 import { useAuth } from "../src/context/AuthContext";
 
 export default function RegisterPage() {
-  const { user } = useAuth();
+  const { register, loading, user } = useAuth();
   const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // If already logged in → go to decks
   useEffect(() => {
-    if (user) router.replace("/decks");
+    if (user) {
+      router.replace("/decks");
+    }
   }, [user, router]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
     try {
-      const res = await apiRegister(username, email, password);
-      // apiRegister already returns token + user, but AuthContext login uses apiLogin.
-      // simplest: after successful register, go to login:
-      router.push("/login");
+      await register(username.trim(), email.trim(), password);
+      router.push("/decks");
     } catch (err: any) {
       setError(err.message || "Registration failed");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top left, #a5b4fc 0, #e0f2fe 30%, #f5f3ff 70%, #f9fafb 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem 1rem",
-        fontFamily:
-          "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 440,
-          borderRadius: 28,
-          padding: "2rem 2.25rem",
-          background: "rgba(255,255,255,0.9)",
-          boxShadow: "0 24px 60px rgba(15,23,42,0.18)",
-          border: "1px solid rgba(148,163,184,0.4)",
-          backdropFilter: "blur(16px)",
-        }}
-      >
-        <header
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "999px",
-                background:
-                  "conic-gradient(from 180deg at 50% 50%, #4f46e5, #06b6d4, #a855f7, #4f46e5)",
-              }}
-            />
-            <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500/30 via-sky-500/20 to-slate-950 px-4 py-10 flex items-center justify-center">
+      <div className="w-full max-w-md rounded-3xl border border-slate-700/60 bg-slate-950/80 shadow-2xl shadow-indigo-500/40 backdrop-blur-xl p-6 md:p-8">
+        {/* Header */}
+        <header className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,#4f46e5,#06b6d4,#a855f7,#4f46e5)]" />
+            <span className="text-sm font-semibold text-slate-50">
               Minddeck
             </span>
           </div>
           <Link
             href="/"
-            style={{
-              fontSize: "0.8rem",
-              color: "#6b7280",
-              textDecoration: "none",
-            }}
+            className="text-xs text-slate-400 hover:text-slate-200 hover:underline"
           >
-            ← Home
+            ← Back home
           </Link>
         </header>
 
-        <h1
-          style={{
-            fontSize: "1.6rem",
-            fontWeight: 700,
-            marginBottom: "0.4rem",
-            color: "#0f172a",
-          }}
-        >
+        {/* Title */}
+        <h1 className="text-xl font-bold text-slate-50 mb-1">
           Create your account
         </h1>
-        <p
-          style={{
-            fontSize: "0.9rem",
-            color: "#6b7280",
-            marginBottom: "1.5rem",
-          }}
-        >
-          Save your decks, track progress and generate AI flashcards anytime.
+        <p className="mb-5 text-sm text-slate-400">
+          Build AI‑powered flashcard decks and keep your memory sharp with
+          spaced repetition.
         </p>
 
-        <form onSubmit={onSubmit} style={{ display: "grid", gap: "0.9rem" }}>
-          <label style={{ fontSize: "0.85rem", color: "#4b5563" }}>
-            Username
+        {/* Form */}
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-300">
+              Username
+            </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              style={{
-                width: "100%",
-                marginTop: "0.2rem",
-                padding: "0.6rem 0.7rem",
-                borderRadius: 10,
-                border: "1px solid rgba(148,163,184,0.8)",
-                background: "rgba(248,250,252,0.9)",
-              }}
+              className="w-full text-sm"
             />
-          </label>
+          </div>
 
-          <label style={{ fontSize: "0.85rem", color: "#4b5563" }}>
-            Email
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-300">
+              Email
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: "100%",
-                marginTop: "0.2rem",
-                padding: "0.6rem 0.7rem",
-                borderRadius: 10,
-                border: "1px solid rgba(148,163,184,0.8)",
-                background: "rgba(248,250,252,0.9)",
-              }}
+              className="w-full text-sm"
             />
-          </label>
+          </div>
 
-          <label style={{ fontSize: "0.85rem", color: "#4b5563" }}>
-            Password
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-300">
+              Password
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{
-                width: "100%",
-                marginTop: "0.2rem",
-                padding: "0.6rem 0.7rem",
-                borderRadius: 10,
-                border: "1px solid rgba(148,163,184,0.8)",
-                background: "rgba(248,250,252,0.9)",
-              }}
+              className="w-full text-sm"
             />
-          </label>
+          </div>
 
-          {error && (
-            <p style={{ color: "#dc2626", fontSize: "0.85rem" }}>{error}</p>
-          )}
+          {error && <p className="text-xs text-rose-400">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: "0.4rem",
-              padding: "0.7rem 1rem",
-              borderRadius: 999,
-              border: "none",
-              background:
-                "linear-gradient(135deg, #4f46e5 0%, #a855f7 50%, #22c55e 100%)",
-              color: "white",
-              fontWeight: 600,
-              cursor: "pointer",
-              boxShadow: "0 22px 45px rgba(79,70,229,0.45)",
-              opacity: loading ? 0.8 : 1,
-            }}
-          >
+          <Button type="submit" disabled={loading} fullWidth className="mt-1">
             {loading ? "Creating account..." : "Sign up"}
-          </button>
+          </Button>
         </form>
 
-        <p
-          style={{
-            marginTop: "1rem",
-            fontSize: "0.85rem",
-            color: "#6b7280",
-          }}
-        >
+        {/* Footer */}
+        <p className="mt-5 text-center text-xs text-slate-400">
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "#4f46e5" }}>
+          <Link href="/login" className="text-indigo-400 hover:text-indigo-300">
             Log in
           </Link>
         </p>

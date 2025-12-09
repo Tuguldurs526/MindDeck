@@ -97,7 +97,8 @@ export default function LandingPage() {
                     padding: "0.45rem 1.1rem",
                     borderRadius: 999,
                     border: "1px solid rgba(148,163,184,0.4)",
-                    backgroundColor: "rgba(255,255,255,0.6)",
+                    background:
+                      "linear-gradient(135deg, #4f46e5 0%, #a855f7 50%, #22c55e 100%)",
                     backdropFilter: "blur(10px)",
                     cursor: "pointer",
                   }}

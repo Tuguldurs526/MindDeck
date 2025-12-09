@@ -1,13 +1,9 @@
 // apps/web/src/context/AuthContext.tsx
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
-import { apiLogin, apiRegister, type AuthResponse } from "shared-api";
+import { apiLogin, apiRegister, type ApiUser } from "shared-api";
 
-type User = {
-  id: string;
-  username: string;
-  email: string;
-};
+type User = ApiUser;
 
 type AuthContextValue = {
   user: User | null;
@@ -15,8 +11,8 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
-    email: string,
     username: string,
+    email: string,
     password: string,
   ) => Promise<void>;
   logout: () => void;
@@ -26,20 +22,12 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "minddeck_auth";
 
-function storeAuth(res: AuthResponse) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ user: res.user, token: res.token }),
-  );
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // hydrate from localStorage on first load
+  // Restore from localStorage on first load
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -58,36 +46,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const applyAuth = (res: AuthResponse) => {
-    setUser(res.user);
-    setToken(res.token);
-    storeAuth(res);
+  const persistAuth = (user: User, token: string) => {
+    setUser(user);
+    setToken(token);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, token }));
+    }
   };
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       const res = await apiLogin(email, password);
-      applyAuth(res);
+      persistAuth(res.user, res.token);
     } finally {
       setLoading(false);
     }
-    // any error thrown by apiLogin will bubble up to the caller
   };
 
   const register = async (
-    email: string,
     username: string,
+    email: string,
     password: string,
   ) => {
     setLoading(true);
     try {
       const res = await apiRegister(username, email, password);
-      applyAuth(res);
+      // Auto‑login after register
+      persistAuth(res.user, res.token);
     } finally {
       setLoading(false);
     }
-    // errors from apiRegister also bubble up
   };
 
   const logout = () => {
