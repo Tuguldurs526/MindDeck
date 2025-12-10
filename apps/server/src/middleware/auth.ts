@@ -1,7 +1,7 @@
 // apps/server/src/middleware/auth.ts
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { assertJwtEnv } from "../utils/jwt";
+import { assertJwtEnv } from "../utils/jwt.js";
 
 interface JwtPayload {
   sub: string;
