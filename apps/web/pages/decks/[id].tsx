@@ -146,13 +146,7 @@ function DeckDetailInner() {
   const isAIDeck = deck.source === "ai";
 
   return (
-    <main
-      style={{
-        maxWidth: 960,
-        margin: "2rem auto",
-        padding: "1rem",
-      }}
-    >
+    <main className="page-main">
       <button
         type="button"
         onClick={() => router.push("/decks")}
@@ -181,6 +175,7 @@ function DeckDetailInner() {
           justifyContent: "space-between",
           gap: "1rem",
           marginBottom: "0.75rem",
+          flexWrap: "wrap",
         }}
       >
         <div>
@@ -191,6 +186,7 @@ function DeckDetailInner() {
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
+              color: "#0f172a",
             }}
           >
             {deck.title}
@@ -267,17 +263,18 @@ function DeckDetailInner() {
         </div>
       </header>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)",
-          gap: "1.5rem",
-          alignItems: "flex-start",
-        }}
-      >
+      <section className="page-grid-2-wide">
         {/* Cards list */}
         <div>
-          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>Cards</h2>
+          <h2
+            style={{
+              marginBottom: "0.5rem",
+              fontSize: "1.05rem",
+              color: "#0f172a",
+            }}
+          >
+            Cards
+          </h2>
           {cardCount === 0 ? (
             <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>
               No cards yet. Add your first one on the right →

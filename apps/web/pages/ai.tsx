@@ -41,7 +41,7 @@ function AIGeneratorInner() {
     try {
       let res;
       if (file) {
-        // PDF/DOCX path
+        // PDF/DOCX path — numCards will be respected via form field + backend
         res = await apiUploadAndGenerateCards(token, file, numCards);
       } else {
         // Text path
@@ -104,14 +104,8 @@ function AIGeneratorInner() {
 
   return (
     <AppLayout>
-      <main
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1.1fr)",
-          gap: "1.5rem",
-          alignItems: "flex-start",
-        }}
-      >
+      {/* Uses shared responsive helpers from globals.css */}
+      <main className="page-main page-grid-2">
         {/* Left: input (text + file) */}
         <section>
           <h1
@@ -330,7 +324,7 @@ function AIGeneratorInner() {
                       style={{
                         fontWeight: 600,
                         marginBottom: "0.25rem",
-                        color: "#0f172a", // darker question text
+                        color: "#0f172a",
                       }}
                     >
                       Q: {c.front}
@@ -338,7 +332,7 @@ function AIGeneratorInner() {
                     <div
                       style={{
                         fontSize: "0.9rem",
-                        color: "#1f2933", // darker answer text
+                        color: "#1f2933",
                         whiteSpace: "pre-wrap",
                       }}
                     >
