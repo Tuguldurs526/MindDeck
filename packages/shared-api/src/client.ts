@@ -111,6 +111,14 @@ export async function apiCreateDeck(token: string, title: string) {
   );
 }
 
+export async function apiDeleteDeck(token: string, id: string) {
+  return request<{ message?: string; success?: boolean }>(
+    `/decks/${id}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
 export async function apiGetDeck(id: string, token: string) {
   return request<Deck>(`/decks/${id}`, { method: "GET" }, token);
 }
@@ -194,6 +202,13 @@ export type ReviewCard = {
   deckId?: string;
   front: string;
   back: string;
+  // include SM-2 state if backend sends it
+  sm2?: {
+    due?: string; // ISO string from Mongo
+    reps?: number;
+    interval?: number;
+    ease?: number;
+  };
 };
 
 export type ReviewQueueResponse = {
