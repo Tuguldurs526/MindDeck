@@ -115,7 +115,7 @@ $cardId = $card._id
 Invoke-RestMethod -Method Get -Uri "$API/cards/$deckId" -Headers $headers | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Method Put -Uri "$API/cards/$cardId" -Headers $headers -ContentType "application/json" -Body '{"back":"Asymptotic upper bound"}'
 Invoke-RestMethod -Method Delete -Uri "$API/cards/$cardId" -Headers $headers
-Invoke-RestMethod -Method Delete -Uri "$API/decks/$deckId" -Headers $headers```
+Invoke-RestMethod -Method Delete -Uri "$API/decks/$deckId" -Headers $headers
 ```
 ## 6) API Overview
 **Auth**
