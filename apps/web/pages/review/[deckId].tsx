@@ -7,6 +7,7 @@ import {
   apiResetDeckReviews,
   type ReviewCard,
 } from "shared-api";
+import { AppLayout } from "../../src/components/AppLayout";
 import { RequireAuth } from "../../src/components/RequireAuth";
 import { useAuth } from "../../src/context/AuthContext";
 
@@ -104,16 +105,17 @@ function ReviewInner() {
 
   if (error)
     return (
-      <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
+      <main className="page-main">
         <button
           type="button"
           onClick={() => router.push(`/decks/${deckIdStr}`)}
           style={{
             marginBottom: "1rem",
-            color: "#111827",
+            color: "#0f172a",
             background: "transparent",
             border: "none",
             cursor: "pointer",
+            fontSize: "0.9rem",
           }}
         >
           ← Back to deck
@@ -127,22 +129,27 @@ function ReviewInner() {
 
   if (done)
     return (
-      <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
+      <main className="page-main">
         <button
           type="button"
           onClick={() => router.push(`/decks/${deckIdStr}`)}
           style={{
             marginBottom: "1rem",
-            color: "#111827",
+            color: "#0f172a",
             background: "transparent",
             border: "none",
             cursor: "pointer",
+            fontSize: "0.9rem",
           }}
         >
           ← Back to deck
         </button>
-        <h1>All done 🎉</h1>
-        <p>No more cards to review in this deck right now.</p>
+        <h1 style={{ marginBottom: "0.5rem", color: "#0f172a" }}>
+          All done 🎉
+        </h1>
+        <p style={{ color: "#475569" }}>
+          No more cards to review in this deck right now.
+        </p>
         <button
           type="button"
           onClick={onResetDeck}
@@ -154,6 +161,9 @@ function ReviewInner() {
             border: "1px solid #e5e7eb",
             background:
               "linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #22c55e 100%)",
+            color: "#ffffff",
+            fontWeight: 600,
+            cursor: resetting ? "default" : "pointer",
           }}
         >
           {resetting ? "Resetting..." : "Review this deck again now"}
@@ -164,7 +174,7 @@ function ReviewInner() {
   if (!card) return <p style={{ padding: "2rem" }}>No card.</p>;
 
   return (
-    <main style={{ maxWidth: 640, margin: "2rem auto", padding: "1rem" }}>
+    <main className="page-main">
       <button
         type="button"
         onClick={() => router.push("/decks")}
@@ -174,7 +184,7 @@ function ReviewInner() {
           borderRadius: 999,
           border: "1px solid #e5e7eb",
           backgroundColor: "#f9fafb",
-          color: "#111827",
+          color: "#0f172a",
           cursor: "pointer",
           fontSize: "0.85rem",
         }}
@@ -182,24 +192,44 @@ function ReviewInner() {
         ← Back to decks
       </button>
 
-      <h1 style={{ marginBottom: "1rem" }}>Review</h1>
+      <h1
+        style={{
+          marginBottom: "1rem",
+          fontSize: "1.5rem",
+          color: "#0f172a",
+        }}
+      >
+        Review
+      </h1>
 
       <div
         style={{
           borderRadius: 12,
-          padding: "2rem",
-          border: "1px solid #ddd",
-          background: "#fff",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+          padding: "1.75rem 1.5rem",
+          border: "1px solid #e5e7eb",
+          background: "#ffffff",
+          boxShadow: "0 4px 12px rgba(15,23,42,0.05)",
           minHeight: 160,
         }}
       >
-        <p style={{ fontSize: "1.1rem", marginBottom: "1rem" }}>
+        <p
+          style={{
+            fontSize: "1.1rem",
+            marginBottom: "1rem",
+            color: "#0f172a",
+          }}
+        >
           <strong>Q:</strong> {card.front}
         </p>
 
         {showBack && (
-          <p style={{ fontSize: "1rem", color: "#333" }}>
+          <p
+            style={{
+              fontSize: "1rem",
+              color: "#1f2937",
+              marginTop: "0.5rem",
+            }}
+          >
             <strong>A:</strong> {card.back}
           </p>
         )}
@@ -243,7 +273,9 @@ function ReviewInner() {
 export default function ReviewPage() {
   return (
     <RequireAuth>
-      <ReviewInner />
+      <AppLayout>
+        <ReviewInner />
+      </AppLayout>
     </RequireAuth>
   );
 }

@@ -1,5 +1,6 @@
 // apps/server/src/routes/aiRoutes.ts
-import { Request, Response, Router } from "express";
+import type { Request, Response } from "express";
+import { Router } from "express";
 import { createRequire } from "module";
 import multer from "multer";
 import OpenAI from "openai";
@@ -137,56 +138,54 @@ router.post("/generate", verifyToken, async (req: Request, res: Response) => {
  * multipart/form-data with field "file"
  * Accepts: PDF or DOCX, extracts text, then reuses generateCardsFromText.
  */
-router.post(
-  "/upload",
-  verifyToken,
-  upload.single("file"),
-  // use `any` here so TS doesn't complain about `req.file`
-  async (req: any, res: Response) => {
-    try {
-      const file = req.file;
+router.post("/upload", verifyToken, upload.single("file"), async (req: Request, res: Response) => {
+  try {
+    const file = (req as any).file as Express.Multer.File | undefined;
 
-      if (!file || !file.buffer) {
-        return res.status(400).json({ error: "No file uploaded." });
-      }
+    if (!file || !file.buffer) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
 
-      const { originalname, mimetype, buffer } = file;
-      const lowerName = originalname.toLowerCase();
-      let text = "";
+    const { originalname, mimetype, buffer } = file;
+    const lowerName = originalname.toLowerCase();
+    let text = "";
 
-      if (mimetype === "application/pdf" || lowerName.endsWith(".pdf")) {
-        // 👇 use the helper with PDFParse class
-        text = await extractPdfText(buffer);
-      } else if (
-        mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        lowerName.endsWith(".docx")
-      ) {
-        const result = await mammoth.extractRawText({ buffer });
-        text = result.value || "";
-      } else {
-        return res.status(400).json({
-          error: "Unsupported file type. Please upload a PDF or DOCX file.",
-        });
-      }
-
-      if (!text || text.trim().length < 20) {
-        return res.status(400).json({
-          error: "Could not extract enough text from the document.",
-        });
-      }
-
-      const numCards = 10;
-      const cards = await generateCardsFromText(text, numCards);
-
-      return res.json({ cards });
-    } catch (err: any) {
-      console.error("DEBUG /ai/upload error", err);
-      return res.status(500).json({
-        error: err.message ?? "Failed to generate cards from file",
+    if (mimetype === "application/pdf" || lowerName.endsWith(".pdf")) {
+      text = await extractPdfText(buffer);
+    } else if (
+      mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      lowerName.endsWith(".docx")
+    ) {
+      const result = await mammoth.extractRawText({ buffer });
+      text = result.value || "";
+    } else {
+      return res.status(400).json({
+        error: "Unsupported file type. Please upload a PDF or DOCX file.",
       });
     }
+
+    if (!text || text.trim().length < 20) {
+      return res.status(400).json({
+        error: "Could not extract enough text from the document.",
+      });
+    }
+
+    // ✅ read numCards from the form (sent by frontend)
+    const rawNum =
+      req.body && (req.body as any).numCards !== undefined
+        ? Number((req.body as any).numCards)
+        : 10;
+
+    const cards = await generateCardsFromText(text, rawNum);
+
+    return res.json({ cards });
+  } catch (err: any) {
+    console.error("DEBUG /ai/upload error", err);
+    return res.status(500).json({
+      error: err.message ?? "Failed to generate cards from file",
+    });
   }
-);
+});
 
 /**
  * Existing AI helper endpoints

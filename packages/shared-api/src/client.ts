@@ -291,17 +291,20 @@ export async function apiGenerateCards(
 export async function apiUploadAndGenerateCards(
   token: string,
   file: File,
-  numCards = 10,
-) {
+  numCards: number = 10,
+): Promise<AIGenerateResponse> {
+  const safeNum = Number.isFinite(numCards)
+    ? Math.min(Math.max(numCards, 1), 30)
+    : 10;
+
   const form = new FormData();
   form.append("file", file);
-  form.append("numCards", String(numCards));
+  form.append("numCards", String(safeNum));
 
   const res = await fetch(`${API_URL}/ai/upload`, {
     method: "POST",
     headers: {
-      // IMPORTANT: do NOT set Content-Type manually here,
-      // the browser will add the correct multipart boundary.
+      // ⚠️ Don't set Content-Type for FormData, browser will do it.
       Authorization: `Bearer ${token}`,
     },
     body: form,
@@ -315,7 +318,7 @@ export async function apiUploadAndGenerateCards(
         msg = body.error;
       }
     } catch {
-      // ignore
+      // ignore JSON parse errors
     }
     throw new Error(msg || "Upload request failed");
   }

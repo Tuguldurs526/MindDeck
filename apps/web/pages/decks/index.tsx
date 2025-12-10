@@ -35,7 +35,7 @@ function formatNextReviewLabel(dueIso?: string | null) {
 }
 
 function DeckListInner() {
-  const { token, user, logout } = useAuth();
+  const { token } = useAuth();
 
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,16 +155,18 @@ function DeckListInner() {
   }, [token, decks]);
 
   return (
-    <main style={{ maxWidth: 960, margin: "2rem auto", padding: "0 1rem" }}>
+    <main className="page-main">
       <header
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "1.5rem",
+          gap: "0.75rem",
+          flexWrap: "wrap",
         }}
       >
-        <div>
+        <div style={{ minWidth: 0, flex: "1 1 200px" }}>
           <h1
             style={{
               fontSize: "1.6rem",
@@ -178,7 +180,14 @@ function DeckListInner() {
             Review a deck or let AI help you generate new cards.
           </p>
         </div>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            alignItems: "center",
+            flexShrink: 0,
+          }}
+        >
           <button
             type="button"
             onClick={handleCreateDeck}
@@ -193,6 +202,7 @@ function DeckListInner() {
               fontWeight: 600,
               cursor: "pointer",
               boxShadow: "0 14px 30px rgba(79,70,229,0.35)",
+              whiteSpace: "nowrap",
             }}
           >
             + New deck
@@ -236,15 +246,18 @@ function DeckListInner() {
                     textDecoration: "none",
                     color: "inherit",
                     boxShadow: "0 4px 10px rgba(15,23,42,0.04)",
+                    gap: "0.75rem",
+                    flexWrap: "wrap",
                   }}
                 >
-                  <div>
+                  <div style={{ minWidth: 0, flex: "1 1 auto" }}>
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
                         gap: "0.4rem",
                         marginBottom: "0.2rem",
+                        flexWrap: "wrap",
                       }}
                     >
                       <span
@@ -298,6 +311,7 @@ function DeckListInner() {
                     style={{
                       fontSize: "0.8rem",
                       color: "#9ca3af",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     View →
