@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/src/index.js"
+    "start": "node dist/src/index.js",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
