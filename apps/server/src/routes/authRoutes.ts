@@ -1,8 +1,9 @@
+// apps/server/src/routes/authRoutes.ts
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { login, register } from "../controllers/authController";
-import { loginSchema, registerSchema } from "../schemas/authSchemas.js";
+import { login, register } from "../controllers/authController.js";
 import { validate } from "../middleware/validate.js";
+import { loginSchema, registerSchema } from "../schemas/authSchemas.js";
 
 const router = Router();
 
@@ -19,7 +20,10 @@ const authLimiter = rateLimit({
   skip: () => SKIP_AUTH_RATE_LIMIT,
 });
 
-router.post("/register", authLimiter, register);
-router.post("/login", authLimiter, login);
+// Register
+router.post("/register", authLimiter, validate(registerSchema), register);
+
+// Login
+router.post("/login", authLimiter, validate(loginSchema), login);
 
 export default router;

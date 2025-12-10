@@ -101,7 +101,7 @@ export async function resetDeckReviews(req: Request, res: Response, next: NextFu
 
     const now = new Date();
 
-    const result = await Card.updateMany(
+    const rawResult = await Card.updateMany(
       { owner, deck: deckId },
       {
         $set: {
@@ -111,12 +111,15 @@ export async function resetDeckReviews(req: Request, res: Response, next: NextFu
           "sm2.due": now,
         },
       }
-    );
+    ).exec();
+
+    // Be defensive about the shape of the result (Mongo/Mongoose versions differ)
+    const result: any = rawResult;
 
     return res.json({
       reset: true,
-      matched: result.matchedCount ?? result.n ?? 0,
-      modified: result.modifiedCount ?? result.nModified ?? 0,
+      matched: result.matchedCount ?? 0,
+      modified: result.modifiedCount ?? 0,
     });
   } catch (e) {
     return next(e);
