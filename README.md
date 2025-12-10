@@ -27,9 +27,9 @@ Check the MindDeck MVP one‑pager.
 ## 3) Environments
 **Server** (apps/server/.env
 Copy the template:
-```text
+```powershell
 copy apps\server\.env.example apps\server\.env
-
+```
 
 Then edit:
 ``` ini
@@ -53,14 +53,17 @@ AUTH_RATE_MAX=100
 # OpenAI model + API key
 OPENAI_API_KEY=<your-key>
 OPENAI_MODEL=gpt-4.1-mini
+``` 
 Generate a secure JWT secret:
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Web (apps/web/.env.local)
 textcopy apps\web\.env.local.example apps\web\.env.local
+```
 Ensure:
 ```ini
 NEXT_PUBLIC_API_URL=http://localhost:5000
+```
 **Mobile**
 ```ini
 apps/mobile/app.json uses:
