@@ -118,6 +118,7 @@ function AIGeneratorInner() {
             style={{
               fontSize: "1.8rem",
               marginBottom: "0.5rem",
+              color: "#0f172a",
             }}
           >
             AI flashcard generator
@@ -157,6 +158,7 @@ function AIGeneratorInner() {
                   fontSize: "0.9rem",
                   resize: "vertical",
                   backgroundColor: file ? "#f9fafb" : "#ffffff",
+                  color: "#0f172a",
                 }}
                 disabled={!!file}
               />
@@ -226,6 +228,7 @@ function AIGeneratorInner() {
                   border: "1px solid #cbd5f5",
                   padding: "0.2rem 0.5rem",
                   fontSize: "0.9rem",
+                  color: "#0f172a",
                 }}
               />
             </label>
@@ -264,7 +267,13 @@ function AIGeneratorInner() {
 
         {/* Right: generated cards + save */}
         <section>
-          <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+          <h2
+            style={{
+              fontSize: "1.1rem",
+              marginBottom: "0.5rem",
+              color: "#0f172a",
+            }}
+          >
             Generated cards {cardsCount ? `(${cardsCount})` : ""}
           </h2>
 
@@ -321,6 +330,7 @@ function AIGeneratorInner() {
                       style={{
                         fontWeight: 600,
                         marginBottom: "0.25rem",
+                        color: "#0f172a", // darker question text
                       }}
                     >
                       Q: {c.front}
@@ -328,7 +338,7 @@ function AIGeneratorInner() {
                     <div
                       style={{
                         fontSize: "0.9rem",
-                        color: "#475569",
+                        color: "#1f2933", // darker answer text
                         whiteSpace: "pre-wrap",
                       }}
                     >
@@ -382,6 +392,7 @@ function AIGeneratorInner() {
                       border: "1px solid #cbd5f5",
                       padding: "0.4rem 0.7rem",
                       fontSize: "0.9rem",
+                      color: "#0f172a",
                     }}
                     placeholder="AI deck"
                   />

@@ -145,7 +145,7 @@ export default function LandingPage() {
                 alignItems: "center",
                 padding: "0.2rem 0.75rem",
                 borderRadius: 999,
-                backgroundColor: "rgba(255,255,255,0.7)",
+                backgroundColor: "rgba(158, 88, 223, 0.7)",
                 fontSize: "0.8rem",
                 marginBottom: "0.75rem",
                 border: "1px solid rgba(148,163,184,0.4)",

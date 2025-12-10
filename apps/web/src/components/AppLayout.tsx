@@ -61,7 +61,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               color: "#111827",
             }}
           >
-            Minddeck
+            MINDDECK
           </span>
         </Link>
 
@@ -82,7 +82,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 textDecoration: "none",
                 padding: "0.35rem 0.9rem",
                 borderRadius: 999,
-                backgroundColor: "rgba(255,255,255,0.8)",
+                background:
+                  "linear-gradient(135deg, #4f46e5 0%, #6366f1 40%, #22c55e 100%)",
+                color: "white",
                 border: "1px solid rgba(148,163,184,0.45)",
                 backdropFilter: "blur(10px)",
               }}
@@ -140,7 +142,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     color: "#111827",
                   }}
                 >
-                  {user.username || "Student"}
+                  {user.username || "User"}
                 </div>
                 <div
                   style={{

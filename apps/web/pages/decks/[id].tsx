@@ -348,7 +348,13 @@ function DeckDetailInner() {
             boxShadow: "0 10px 28px rgba(15,23,42,0.08)",
           }}
         >
-          <h2 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>
+          <h2
+            style={{
+              marginBottom: "0.5rem",
+              fontSize: "1.05rem",
+              color: "#0f172a",
+            }}
+          >
             Add card
           </h2>
           <form onSubmit={onCreateCard}>
