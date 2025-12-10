@@ -1,9 +1,9 @@
 // apps/server/src/routes/authRoutes.ts
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { z } from "zod";
 import { login, register } from "../controllers/authController.js";
 import { validate } from "../middleware/validate.js";
-import { loginSchema, registerSchema } from "../schemas/authSchemas.js";
 
 const router = Router();
 
@@ -18,6 +18,18 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => SKIP_AUTH_RATE_LIMIT,
+});
+
+// 🔐 Inline Zod schemas
+const registerSchema = z.object({
+  username: z.string().min(2).max(50),
+  email: z.string().email(),
+  password: z.string().min(6).max(100),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6).max(100),
 });
 
 // Register
