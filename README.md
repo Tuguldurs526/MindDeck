@@ -19,10 +19,10 @@ Check the MindDeck MVP one‑pager.
 - Windows users: use PowerShell (all commands below have Windows-safe versions)
 
 ## 2) Clone & Install
-```
-git clone <your_repo_url> Minddeck
-cd Minddeck
-npm install
+  ```
+  git clone <your_repo_url> Minddeck
+  cd Minddeck
+  npm install
 
 ## 3) Environments
 **Server** (apps/server/.env
