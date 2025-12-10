@@ -23,8 +23,9 @@ Check the MindDeck MVP one‑pager.
 git clone <your_repo_url> Minddeck
 cd Minddeck
 npm install
+
 ## 3) Environments
-**Server** (apps/server/.env)
+**Server** (apps/server/.env
 Copy the template:
 ```powersell
 copy apps\server\.env.example apps\server\.env
