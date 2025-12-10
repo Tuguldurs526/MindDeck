@@ -19,13 +19,14 @@ Check the MindDeck MVP one‑pager.
 - Windows users: use PowerShell (all commands below have Windows-safe versions)
 
 ## 2) Clone & Install
-  ```text
-  git clone <your_repo_url> Minddeck
-  cd Minddeck
-  npm install
+```powershell
+git clone <your_repo_url> Minddeck
+cd Minddeck
+npm install
+```
 
 ## 3) Environments
-**Server** (apps/server/.env
+**Server** (apps/server/.env)
 Copy the template:
 ```powershell
 copy apps\server\.env.example apps\server\.env
@@ -34,7 +35,6 @@ copy apps\server\.env.example apps\server\.env
 Then edit:
 ``` ini
 PORT=5000
-
 
 # Local Mongo (recommended for dev)
 MONGO_URI=mongodb://127.0.0.1:27017/minddeck
@@ -57,22 +57,27 @@ OPENAI_MODEL=gpt-4.1-mini
 Generate a secure JWT secret:
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-Web (apps/web/.env.local)
-textcopy apps\web\.env.local.example apps\web\.env.local
+```
+**Web**(apps/web/.env.local)
+```powershell
+copy apps\web\.env.local.example apps\web\.env.local
 ```
 Ensure:
 ```ini
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 **Mobile**
+apps/mobile/app.json uses:
 ```ini
 apps/mobile/app.json uses:
 expo.extra.API_URL = "http://localhost:5000"
 If running on a physical phone, update this to your machine's LAN IP.
+```
 ## 4) Run (development)
 From repo root:
 ```powershell
 npm run dev
+```
 This starts:
 | APP       | URL                     |
 |-----------|-------------------------------|
@@ -83,12 +88,12 @@ This starts:
 ## 5) Quick Smoke Test (No Postman Required)
 ```powershell
 $API = "http://localhost:5000"
-
+```
 # 1) Health
 Invoke-RestMethod -Method Get -Uri "$API/api/health"
 
 # 2) Register/login
-try {
+```try {
   $reg = Invoke-RestMethod -Method Post -Uri "$API/auth/register" -ContentType "application/json" -Body '{"username":"tugo","email":"tugo@test.com","password":"Passw0rd!"}'
   $token = $reg.token
 } catch {
@@ -96,7 +101,7 @@ try {
   $token = $login.token
 }
 $headers = @{ Authorization = "Bearer " + $token }
-
+```
 # 3) Create deck
 $deck = Invoke-RestMethod -Method Post -Uri "$API/decks" -Headers $headers -ContentType "application/json" -Body '{"title":"Algorithms"}'
 $deckId = $deck._id
