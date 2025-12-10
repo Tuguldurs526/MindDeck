@@ -1,8 +1,8 @@
 // apps/server/src/controllers/authController.ts
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
-import User from "../models/User";
-import { assertJwtEnv, signJwt } from "../utils/jwt";
+import User from "../models/User.js";
+import { assertJwtEnv, signJwt } from "../utils/jwt.js";
 
 function normEmail(raw: unknown) {
   return String(raw ?? "")

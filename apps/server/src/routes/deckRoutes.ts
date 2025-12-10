@@ -2,8 +2,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { createDeck, deleteDeck, getDeck, listDecks } from "../controllers/deckController.js";
-import { verifyToken } from "../middleware/authMiddleware";
-import { validate } from "../middleware/validate";
+import { verifyToken } from "../middleware/authMiddleware.js";
+import { validate } from "../middleware/validate.js";
 
 // schemas local to route to avoid “undefined” import headaches
 const createDeckSchema = z.object({

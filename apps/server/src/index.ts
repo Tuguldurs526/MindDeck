@@ -1,7 +1,7 @@
-//apps/server/src/index.ts
+// apps/server/src/index.ts
 import "dotenv/config";
-import { createApp } from "./app";
-import { connectDB } from "./config/db";
+import { createApp } from "./app.js";
+import { connectDB } from "./config/db.js";
 
 const PORT = Number(process.env.PORT) || 5000;
 
