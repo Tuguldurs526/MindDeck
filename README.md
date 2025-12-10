@@ -30,9 +30,11 @@ Copy the template:
 ```powersell
 copy apps\server\.env.example apps\server\.env
 
+
 Then edit:
 ``` ini
 PORT=5000
+
 
 # Local Mongo (recommended for dev)
 MONGO_URI=mongodb://127.0.0.1:27017/minddeck
