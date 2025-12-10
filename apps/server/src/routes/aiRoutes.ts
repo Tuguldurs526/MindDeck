@@ -1,7 +1,6 @@
 // apps/server/src/routes/aiRoutes.ts
 import { Request, Response, Router } from "express";
 import { createRequire } from "module";
-// @ts-expect-error - we don't ship @types/multer in this project
 import multer from "multer";
 import OpenAI from "openai";
 import { postExplain, postHint } from "../controllers/aiController.js";
