@@ -74,7 +74,7 @@ expo.extra.API_URL = "http://localhost:5000"
 If running on a physical phone, update this to your machine's LAN IP.
 ```
 ## 4) Run (development)
-From repo root:
+From **repo root**:
 ```powershell
 npm run dev
 ```
@@ -88,7 +88,7 @@ This starts:
 ## 5) Quick Smoke Test (No Postman Required)
 ```powershell
 $API = "http://localhost:5000"
-```
+
 # 1) Health
 Invoke-RestMethod -Method Get -Uri "$API/api/health"
 
@@ -101,7 +101,7 @@ Invoke-RestMethod -Method Get -Uri "$API/api/health"
   $token = $login.token
 }
 $headers = @{ Authorization = "Bearer " + $token }
-```
+
 # 3) Create deck
 $deck = Invoke-RestMethod -Method Post -Uri "$API/decks" -Headers $headers -ContentType "application/json" -Body '{"title":"Algorithms"}'
 $deckId = $deck._id
@@ -116,15 +116,17 @@ Invoke-RestMethod -Method Get -Uri "$API/cards/$deckId" -Headers $headers | Conv
 Invoke-RestMethod -Method Put -Uri "$API/cards/$cardId" -Headers $headers -ContentType "application/json" -Body '{"back":"Asymptotic upper bound"}'
 Invoke-RestMethod -Method Delete -Uri "$API/cards/$cardId" -Headers $headers
 Invoke-RestMethod -Method Delete -Uri "$API/decks/$deckId" -Headers $headers```
-
+```
 ## 6) API Overview
 **Auth**
 ``` pgsql
 POST /auth/register        { username, email, password }
 POST /auth/login           { email, password }
+```
 Auth header for all protected routes:
 ```makefile
 Authorization: Bearer <token>
+```
 **Decks**
 
 ```bash
@@ -132,32 +134,38 @@ POST   /decks              { title }                    -> deck
 GET    /decks              ?page&limit                  -> [deck]
 GET    /decks/:id                                       -> deck
 DELETE /decks/:id                                       -> OK
+```
 **Cards**
 ```bash
 POST   /cards              { front, back, deckId }      -> card
 GET    /cards/:deckId                                   -> [card]
 PUT    /cards/:id         { front?, back? }             -> card
-DELETE /cards/:id                                       -> OK```
+DELETE /cards/:id                                       -> OK
+```
 **Reviews (SM‑2 scheduling system)**
 ```bash
 GET    /reviews/queue?deckId=abc&limit=10   -> next due cards
-POST   /reviews/answer { cardId, quality }   -> updates intervals```
+POST   /reviews/answer { cardId, quality }   -> updates intervals
+```
 AI-powered extraction:
 ```bash
 POST /ai/generate        { text }
-POST /ai/upload          multipart/form-data (PDF / DOCX)```
+POST /ai/upload          multipart/form-data (PDF / DOCX)
+```
 ## 7) Repo Scripts
 From root:
 ```bash
 npm run dev
 npm run dev:server
 npm run dev:web
-npm run dev:mobile```
+npm run dev:mobile
+```
 Server-specific:
 ```bash
 npm run dev
 npm run build
-npm start```
+npm start
+```
 ## 8) Project Structure
 ```csharp
 Minddeck/
@@ -172,7 +180,8 @@ Minddeck/
 │  └─ mvp-one-pager.md
 ├─ .vscode/
 ├─ tsconfig.base.json
-└─ .editorconfig```
+└─ .editorconfig
+```
 ## 9) Common Issues
 
 - Server not responding → start via npm run dev
@@ -195,7 +204,8 @@ Minddeck/
 ```gpsql
 git checkout -b feature/<name>
 git commit -m "feat: description"
-git push -u origin feature/<name>```
+git push -u origin feature/<name>
+```
 ## 12) Current Milestone (Completed)
 
 - Login / register
@@ -237,16 +247,18 @@ Check the MindDeck MVP one‑pager.
 
 Windows users: use PowerShell (all commands below have Windows-safe versions)
 
-2) Clone & Install
+## 2) Clone & Install
 ```powershell
 git clone <your_repo_url> Minddeck
 cd Minddeck
-npm install```
-3) Environments
+npm install
+```
+## 3) Environments
 **Server** (apps/server/.env)
 Copy the template:
 ```powershell
-copy apps\server\.env.example apps\server\.env```
+copy apps\server\.env.example apps\server\.env\
+```
 Then edit:
 ```ini
 PORT=5000
@@ -267,25 +279,31 @@ AUTH_RATE_MAX=100
 
 # OpenAI model + API key
 OPENAI_API_KEY=<your-key>
-OPENAI_MODEL=gpt-4.1-mini```
+OPENAI_MODEL=gpt-4.1-mini
+```
 Generate a secure JWT secret:
 ```powershell
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"```
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 **Web** (apps/web/.env.local)
 ```powershell
-copy apps\web\.env.local.example apps\web\.env.local```
+copy apps\web\.env.local.example apps\web\.env.local
+```
 Ensure:
 ```ini
-NEXT_PUBLIC_API_URL=http://localhost:5000```
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
 **Mobile**
 apps/mobile/app.json uses:
 ```ini
-expo.extra.API_URL = "http://localhost:5000"```
-If running on a physical phone, update this to your machine's LAN IP.
-4) Run (development)
+expo.extra.API_URL = "http://localhost:5000"
+```
+### If running on a physical phone, update this to your machine's LAN IP.
+## 4) Run (development)
 From repo root:
 ```powershell
-npm run dev```
+npm run dev
+```
 This starts:
 | APP       | URL                     |
 |-----------|-------------------------------|
@@ -295,11 +313,7 @@ This starts:
 
 
 
-
-
-
-
-5) Quick Smoke Test (No Postman Required)
+## 5) Quick Smoke Test (No Postman Required)
 ```powershell
 $API = "http://localhost:5000"
 
@@ -329,47 +343,56 @@ $cardId = $card._id
 Invoke-RestMethod -Method Get -Uri "$API/cards/$deckId" -Headers $headers | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Method Put -Uri "$API/cards/$cardId" -Headers $headers -ContentType "application/json" -Body '{"back":"Asymptotic upper bound"}'
 Invoke-RestMethod -Method Delete -Uri "$API/cards/$cardId" -Headers $headers
-Invoke-RestMethod -Method Delete -Uri "$API/decks/$deckId" -Headers $headers```
+Invoke-RestMethod -Method Delete -Uri "$API/decks/$deckId" -Headers $headers
+```
 ## 6) API Overview
 **Auth**
 ```pqsql
 POST /auth/register        { username, email, password }
-POST /auth/login           { email, password }```
+POST /auth/login           { email, password }
+```
 Auth header for all protected routes:
 ```makefile
-Authorization: Bearer <token>```
+Authorization: Bearer <token>
+```
 **Decks**
 ```bash
 POST   /decks              { title }                    -> deck
 GET    /decks              ?page&limit                  -> [deck]
 GET    /decks/:id                                       -> deck
-DELETE /decks/:id                                       -> OK```
+DELETE /decks/:id                                       -> OK
+```
 **Cards**
 ```bash
 POST   /cards              { front, back, deckId }      -> card
 GET    /cards/:deckId                                   -> [card]
 PUT    /cards/:id         { front?, back? }             -> card
-DELETE /cards/:id                                       -> OK```
+DELETE /cards/:id                                       -> OK
+```
 **Reviews (SM‑2 scheduling system)**
 ```bash
 GET    /reviews/queue?deckId=abc&limit=10   -> next due cards
-POST   /reviews/answer { cardId, quality }   -> updates intervals```
+POST   /reviews/answer { cardId, quality }   -> updates intervals
+```
 AI-powered extraction:
 ```bash
 POST /ai/generate        { text }
-POST /ai/upload          multipart/form-data (PDF / DOCX)```
+POST /ai/upload          multipart/form-data (PDF / DOCX)
+```
 ## 7) Repo Scripts
 From root:
 ```bash
 npm run dev
 npm run dev:server
 npm run dev:web
-npm run dev:mobile```
+npm run dev:mobile
+```
 Server-specific:
 ```bash
 npm run dev
 npm run build
-npm start```
+npm start
+```
 ## 8) Project Structure
 ```csharp
 Minddeck/
@@ -384,7 +407,8 @@ Minddeck/
 │  └─ mvp-one-pager.md
 ├─ .vscode/
 ├─ tsconfig.base.json
-└─ .editorconfig```
+└─ .editorconfig
+```
 ## 9) Common Issues
 
 - Server not responding → start via npm run dev
@@ -408,7 +432,8 @@ Minddeck/
 ```pqsql
 git checkout -b feature/<name>
 git commit -m "feat: description"
-git push -u origin feature/<name>```
+git push -u origin feature/<name>
+```
 ## 12) Current Milestone (Completed)
 
 - Login / register
