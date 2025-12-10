@@ -19,15 +19,15 @@ Check the MindDeck MVP one‑pager.
 - Windows users: use PowerShell (all commands below have Windows-safe versions)
 
 ## 2) Clone & Install
-```powershell
+```
 git clone <your_repo_url> Minddeck
 cd Minddeck
-npm install```
+npm install
 ## 3) Environments
 **Server** (apps/server/.env)
 Copy the template:
 ```powersell
-copy apps\server\.env.example apps\server\.env```
+copy apps\server\.env.example apps\server\.env
 
 Then edit:
 ``` ini
@@ -49,24 +49,24 @@ AUTH_RATE_MAX=100
 
 # OpenAI model + API key
 OPENAI_API_KEY=<your-key>
-OPENAI_MODEL=gpt-4.1-mini```
+OPENAI_MODEL=gpt-4.1-mini
 Generate a secure JWT secret:
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Web (apps/web/.env.local)
-textcopy apps\web\.env.local.example apps\web\.env.local```
+textcopy apps\web\.env.local.example apps\web\.env.local
 Ensure:
 ```ini
-NEXT_PUBLIC_API_URL=http://localhost:5000```
+NEXT_PUBLIC_API_URL=http://localhost:5000
 **Mobile**
 ```ini
 apps/mobile/app.json uses:
-expo.extra.API_URL = "http://localhost:5000"```
+expo.extra.API_URL = "http://localhost:5000"
 If running on a physical phone, update this to your machine's LAN IP.
 ## 4) Run (development)
 From repo root:
 ```powershell
-npm run dev```
+npm run dev
 This starts:
 | APP       | URL                     |
 |-----------|-------------------------------|
@@ -110,17 +110,17 @@ Invoke-RestMethod -Method Delete -Uri "$API/decks/$deckId" -Headers $headers```
 **Auth**
 ``` pgsql
 POST /auth/register        { username, email, password }
-POST /auth/login           { email, password }```
+POST /auth/login           { email, password }
 Auth header for all protected routes:
 ```makefile
-Authorization: Bearer <token>```
+Authorization: Bearer <token>
 **Decks**
 
 ```bash
 POST   /decks              { title }                    -> deck
 GET    /decks              ?page&limit                  -> [deck]
 GET    /decks/:id                                       -> deck
-DELETE /decks/:id                                       -> OK```
+DELETE /decks/:id                                       -> OK
 **Cards**
 ```bash
 POST   /cards              { front, back, deckId }      -> card
