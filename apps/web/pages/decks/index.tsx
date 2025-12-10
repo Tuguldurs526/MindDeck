@@ -165,10 +165,16 @@ function DeckListInner() {
         }}
       >
         <div>
-          <h1 style={{ fontSize: "1.6rem", marginBottom: "0.25rem" }}>
+          <h1
+            style={{
+              fontSize: "1.6rem",
+              marginBottom: "0.25rem",
+              color: "#071025ff",
+            }}
+          >
             Your decks
           </h1>
-          <p style={{ fontSize: "0.9rem", color: "#6b7280" }}>
+          <p style={{ fontSize: "0.9rem", color: "#040c1dff" }}>
             Review a deck or let AI help you generate new cards.
           </p>
         </div>
